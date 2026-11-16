@@ -490,11 +490,18 @@ const SCREEN_SUBTITLE_KEY: Record<Tab, DictKey> = {
   scam: "screenScannerSubtitle",
 };
 
-const COOLDOWN_CHECKS = [
-  "Мне НЕ звонят из Нацбанка, КНБ, полиции или курьерской службы",
-  "Меня НЕ просят перевести деньги на «безопасный» или «резервный» счет",
-  "Я лично знаю получателя и подтверждаю перевод",
-];
+const COOLDOWN_CHECKS: Record<Lang, string[]> = {
+  ru: [
+    "Мне НЕ звонят из Нацбанка, КНБ, полиции или курьерской службы",
+    "Меня НЕ просят перевести деньги на «безопасный» или «резервный» счет",
+    "Я лично знаю получателя и подтверждаю перевод",
+  ],
+  kk: [
+    "Маған Ұлттық банктен, ҚҰК-тен, полициядан немесе курьерлік қызметтен қоңырау шалмайды",
+    "Мені ақшаны «қауіпсіз» немесе «резервтік» шотқа аударуға сұрамайды",
+    "Мен алушыны жеке білемін және аударымды растаймын",
+  ],
+};
 
 const SESSION_WORDS = [
   "АЛТЫН",
@@ -704,11 +711,11 @@ const SEVERITY_LABEL_CLASS: Record<ScamSeverity, string> = {
 
 function formatNumber(value: number): string {
   const rounded = Math.round(value);
-  return rounded.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  return rounded.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "\u00A0");
 }
 
 function formatKzt(value: number): string {
-  return `${formatNumber(value)} ₸`;
+  return `${formatNumber(value)}\u00A0₸`;
 }
 
 function formatCard(value: string): string {
@@ -882,47 +889,54 @@ function decisionFor(score: number): Decision {
   return "ALLOW";
 }
 
-function computeRisk(factors: RiskFactors): RiskResult {
+function computeRisk(factors: RiskFactors, lang: Lang): RiskResult {
+  const kk = lang === "kk";
   const weights: RiskWeight[] = [
     {
       key: "unverified_call",
-      label: "Звонок с неизвестного номера",
+      label: kk
+        ? "Белгісіз нөмірден қоңырау"
+        : "Звонок с неизвестного номера",
       points: 35,
       active: factors.unverifiedCallActive,
     },
     {
       key: "clipboard",
-      label: "Вставка реквизитов из буфера",
+      label: kk
+        ? "Буферден деректемелерді қою"
+        : "Вставка реквизитов из буфера",
       points: 20,
       active: factors.clipboardUsed,
     },
     {
       key: "high_amount",
-      label: "Сумма от 200 000 ₸",
+      label: kk ? "200 000 ₸-ден жоғары сома" : "Сумма от 200 000 ₸",
       points: 20,
       active: factors.highAmountVelocity,
     },
     {
       key: "new_recipient",
-      label: "Новый получатель",
+      label: kk ? "Жаңа алушы" : "Новый получатель",
       points: 15,
       active: factors.newRecipient,
     },
     {
       key: "recent_alert",
-      label: "Недавний алерт AI Scam-Scanner",
+      label: kk
+        ? "AI Scam-Scanner-дің жақындағы дабылы"
+        : "Недавний алерт AI Scam-Scanner",
       points: 25,
       active: factors.recentScamAlert,
     },
     {
       key: "vulnerable",
-      label: "Уязвимый профиль (68 лет)",
+      label: kk ? "Осал профиль (68 жас)" : "Уязвимый профиль (68 лет)",
       points: 15,
       active: factors.vulnerableProfile,
     },
     {
       key: "synergy",
-      label: "Синергия: звонок + буфер",
+      label: kk ? "Синергия: қоңырау + буфер" : "Синергия: звонок + буфер",
       points: 15,
       active: factors.unverifiedCallActive && factors.clipboardUsed,
     },
@@ -1164,15 +1178,15 @@ function Toggle({
       aria-checked={checked}
       aria-label={label}
       onClick={onChange}
-      className={`relative h-6 w-11 shrink-0 rounded-full border transition-colors ${
+      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border p-[2px] transition-colors ${
         checked
           ? "border-[#00A859] bg-[#00A859]"
           : "border-[#1E4233] bg-[#0B1F17]"
       }`}
     >
       <span
-        className={`absolute top-[2px] h-[18px] w-[18px] rounded-full bg-white transition-transform ${
-          checked ? "translate-x-[22px]" : "translate-x-[3px]"
+        className={`h-[18px] w-[18px] rounded-full bg-white shadow-sm transition-transform duration-200 ${
+          checked ? "translate-x-[20px]" : "translate-x-0"
         }`}
       />
     </button>
@@ -1335,29 +1349,54 @@ interface StreamLine {
   tone: "danger" | "warn" | "success";
 }
 
-const SCAM_STREAM_LINES: StreamLine[] = [
-  {
-    time: "00:02",
-    text: "«...Алло, это старший следователь и куратор Нацбанка РК...»",
-    highlight: "старший следователь и куратор Нацбанка РК",
-    badge: "Имитация госорганов",
-    tone: "danger",
-  },
-  {
-    time: "00:05",
-    text: "«...на ваше имя прямо сейчас оформляют зеркальный кредит...»",
-    highlight: "прямо сейчас оформляют зеркальный кредит",
-    badge: "Запугивание",
-    tone: "warn",
-  },
-  {
-    time: "00:08",
-    text: "«...срочно скопируйте номер карты резервного счета из WhatsApp и переведите средства...»",
-    highlight: "номер карты резервного счета из WhatsApp",
-    badge: "Реквизиты дроппера",
-    tone: "danger",
-  },
-];
+const SCAM_STREAM_LINES: Record<Lang, StreamLine[]> = {
+  ru: [
+    {
+      time: "00:02",
+      text: "«...Алло, это старший следователь и куратор Нацбанка РК...»",
+      highlight: "старший следователь и куратор Нацбанка РК",
+      badge: "Имитация госорганов",
+      tone: "danger",
+    },
+    {
+      time: "00:05",
+      text: "«...на ваше имя прямо сейчас оформляют зеркальный кредит...»",
+      highlight: "прямо сейчас оформляют зеркальный кредит",
+      badge: "Запугивание",
+      tone: "warn",
+    },
+    {
+      time: "00:08",
+      text: "«...срочно скопируйте номер карты резервного счета из WhatsApp и переведите средства...»",
+      highlight: "номер карты резервного счета из WhatsApp",
+      badge: "Реквизиты дроппера",
+      tone: "danger",
+    },
+  ],
+  kk: [
+    {
+      time: "00:02",
+      text: "«...Алло, бұл Ұлттық банк РК-нің аға тергеушісі және кураторы...»",
+      highlight: "Ұлттық банк РК-нің аға тергеушісі және кураторы",
+      badge: "Мемлекеттік органды имитациялау",
+      tone: "danger",
+    },
+    {
+      time: "00:05",
+      text: "«...сіздің атыңызға дәл қазір айналық несие рәсімделіп жатыр...»",
+      highlight: "дәл қазір айналық несие рәсімделіп жатыр",
+      badge: "Қорқыту",
+      tone: "warn",
+    },
+    {
+      time: "00:08",
+      text: "«...WhatsApp-тан резервтік шоттың карта нөмірін жедел көшіріп, қаражатты аударыңыз...»",
+      highlight: "резервтік шоттың карта нөмірін",
+      badge: "Дроппер деректемелері",
+      tone: "danger",
+    },
+  ],
+};
 
 const STREAM_TONE: Record<
   StreamLine["tone"],
@@ -1390,7 +1429,10 @@ function LiveCallStream({
   sessionCode: string;
 }) {
   const t = (key: DictKey) => DICT[lang][key];
-  const officialText = `«Здравствуйте! Это Айгерим, служба заботы Банка ЦентрКредит. Ваше кодовое слово в приложении — ${sessionCode}»`;
+  const officialText =
+    lang === "kk"
+      ? `«Сәлеметсіз бе! Мен Айгерим, Банк ЦентрКредит-тің қамқорлық қызметімін. Қолданбадағы кодтық сөзіңіз — ${sessionCode}»`
+      : `«Здравствуйте! Это Айгерим, служба заботы Банка ЦентрКредит. Ваше кодовое слово в приложении — ${sessionCode}»`;
 
   const lines = useMemo<StreamLine[]>(() => {
     if (mode === "official") {
@@ -1404,8 +1446,8 @@ function LiveCallStream({
         },
       ];
     }
-    return SCAM_STREAM_LINES;
-  }, [mode, officialText, sessionCode, lang]);
+    return SCAM_STREAM_LINES[lang];
+  }, [mode, officialText, sessionCode, lang, t]);
 
   const [visible, setVisible] = useState(1);
 
@@ -1495,13 +1537,14 @@ function LiveCallStream({
       <ol className="mt-2 space-y-1.5" aria-live="polite">
         {lines.slice(0, visible).map((line) => {
           const tone = STREAM_TONE[line.tone];
-          const before = line.text.slice(
-            0,
-            line.text.indexOf(line.highlight),
-          );
-          const after = line.text.slice(
-            line.text.indexOf(line.highlight) + line.highlight.length,
-          );
+          const matchIndex = line.text.indexOf(line.highlight);
+          const before =
+            matchIndex >= 0 ? line.text.slice(0, matchIndex) : line.text;
+          const matched = matchIndex >= 0 ? line.highlight : "";
+          const after =
+            matchIndex >= 0
+              ? line.text.slice(matchIndex + line.highlight.length)
+              : "";
           return (
             <li
               key={`${line.time}-${line.badge}`}
@@ -1522,9 +1565,11 @@ function LiveCallStream({
                   </div>
                   <p className="mt-0.5 text-[9.5px] leading-snug text-[#CFE8DC]">
                     {before}
-                    <mark className={`rounded px-0.5 ${tone.mark}`}>
-                      {line.highlight}
-                    </mark>
+                    {matched && (
+                      <mark className={`rounded px-0.5 ${tone.mark}`}>
+                        {matched}
+                      </mark>
+                    )}
                     {after}
                   </p>
                 </div>
@@ -1601,13 +1646,13 @@ function CooldownDialog({
             <span className="text-[9.5px] text-[#A9CBB9]">
               {pending.recipient}
             </span>
-            <span className="font-mono text-[12px] tabular-nums text-[#E8F5EE]">
+            <span className="whitespace-nowrap font-mono text-[12px] tabular-nums text-[#E8F5EE]">
               {formatKzt(pending.amount)}
             </span>
           </div>
 
           <div className="mt-2.5 space-y-1.5">
-            {COOLDOWN_CHECKS.map((check, index) => (
+            {COOLDOWN_CHECKS[lang].map((check, index) => (
               <label
                 key={check}
                 className={`flex cursor-pointer items-start gap-2 rounded-lg border px-2.5 py-2 transition-colors ${
@@ -1807,7 +1852,7 @@ function CryptoPassport({
 
           {tampered && (
             <p className="mt-1.5 font-mono text-[8px] text-[#B98D8D]">
-              amount_kzt: 15 000 → {formatNumber(amount)}
+              amount_kzt: {formatNumber(receipt.amount)} → {formatNumber(amount)}
             </p>
           )}
         </div>
@@ -2358,7 +2403,8 @@ export default function Page() {
     ],
   );
 
-  const risk = useMemo(() => computeRisk(factors), [factors]);
+  const risk = useMemo(() => computeRisk(factors, lang), [factors, lang]);
+  const activeBalance = role === "protected" ? familyBalance : balance;
   const decisionMeta = DECISION_META[risk.decision];
   const pendingHolds = holds.filter((hold) => hold.status === "pending");
 
@@ -2766,7 +2812,7 @@ export default function Page() {
   /* ---- Receipts and transfer execution ---------------------------------- */
 
   const finalizeTransfer = async (pending: PendingTransfer) => {
-    if (balance < pending.amount) {
+    if (activeBalance < pending.amount) {
       setFormError("Недостаточно средств на счете");
       pushLog("danger", "Перевод отклонен: недостаточно средств");
       return;
@@ -2781,7 +2827,11 @@ export default function Page() {
         amount: pending.amount,
       });
 
-      setBalance((value) => Math.max(0, value - pending.amount));
+      if (role === "protected") {
+        setFamilyBalance((value) => Math.max(0, value - pending.amount));
+      } else {
+        setBalance((value) => Math.max(0, value - pending.amount));
+      }
       setLatestReceipt(receipt);
       setTampered(false);
       setVerifyResult(null);
@@ -2833,7 +2883,7 @@ export default function Page() {
       reason,
       createdLabel: `сегодня, ${formatClock(new Date()).slice(0, 5)}`,
       status: "pending",
-      source: "self",
+      source: role === "protected" ? "family" : "self",
     };
 
     setHolds((previous) => [hold, ...previous]);
@@ -2852,7 +2902,7 @@ export default function Page() {
       pushLog("warn", "Перевод: сумма не указана");
       return;
     }
-    if (amount > balance) {
+    if (amount > activeBalance) {
       setFormError("Недостаточно средств на счете");
       pushLog("danger", "Перевод: сумма превышает доступный баланс");
       return;
@@ -3151,6 +3201,8 @@ export default function Page() {
   const renderModal = () => {
     if (modal.kind === "none") return null;
 
+    const kk = lang === "kk";
+
     if (modal.kind === "success") {
       const receipt = modal.receipt;
       return (
@@ -3159,14 +3211,14 @@ export default function Page() {
             <div
               role="dialog"
               aria-modal="true"
-              aria-label="Перевод проведен"
+              aria-label={kk ? "Аударым өткізілді" : "Перевод проведен"}
               className="w-full max-w-[330px] animate-fade-rise rounded-2xl border border-[#10B981]/35 bg-[#0B1F17] p-5 shadow-panel"
             >
               <div className="flex justify-end">
                 <button
                   type="button"
                   onClick={() => setModal({ kind: "none" })}
-                  aria-label="Закрыть"
+                  aria-label={kk ? "Жабу" : "Закрыть"}
                   className="grid h-7 w-7 place-items-center rounded-md text-[#7FA793] transition-colors hover:bg-[#122B21] hover:text-[#E8F5EE]"
                 >
                   <X size={14} />
@@ -3176,14 +3228,16 @@ export default function Page() {
                 <CheckCircle2 size={24} />
               </div>
               <h2 className="mt-3 text-[18px] font-medium tracking-[-0.01em]">
-                Перевод проведен
+                {kk ? "Аударым өткізілді" : "Перевод проведен"}
               </h2>
               <p className="mt-1 text-[10.5px] leading-snug text-[#7FA793]">
-                Деньги отправлены, крипто-чек подписан ключом BCC Shield 360.
+                {kk
+                  ? "Ақша жіберілді, крипточек BCC Shield 360 кілтімен қол қойылды."
+                  : "Деньги отправлены, крипто-чек подписан ключом BCC Shield 360."}
               </p>
 
               <div className="mt-3 rounded-xl border border-[#1E4233] bg-[#06110C] px-3 py-2.5">
-                <p className="font-mono text-[22px] font-medium tabular-nums text-[#E8F5EE]">
+                <p className="whitespace-nowrap font-mono text-[22px] font-medium tabular-nums text-[#E8F5EE]">
                   {formatKzt(receipt.amount)}
                 </p>
                 <p className="mt-0.5 text-[10px] text-[#A9CBB9]">
@@ -3192,7 +3246,9 @@ export default function Page() {
               </div>
 
               <p className="mt-2.5 text-[8.5px] text-[#648975]">
-                Цифровая подпись HMAC-SHA256
+                {kk
+                  ? "HMAC-SHA256 цифрлық қолтаңбасы"
+                  : "Цифровая подпись HMAC-SHA256"}
               </p>
               <p className="mt-0.5 break-all font-mono text-[10px] text-[#6EE7B7]">
                 {receipt.signature}
@@ -3206,7 +3262,9 @@ export default function Page() {
                 }}
                 className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#00A859] px-3 py-2.5 text-[11px] font-semibold text-[#04130C] transition-colors hover:bg-[#10B981]"
               >
-                Перейти к крипто-чеку в TrustLens
+                {kk
+                  ? "TrustLens-тегі крипточекке өту"
+                  : "Перейти к крипто-чеку в TrustLens"}
                 <ArrowRight size={13} />
               </button>
               <button
@@ -3214,7 +3272,7 @@ export default function Page() {
                 onClick={() => setModal({ kind: "none" })}
                 className="mt-1.5 w-full rounded-lg border border-[#1E4233] px-3 py-2 text-[10.5px] text-[#A9CBB9] transition-colors hover:bg-[#122B21]"
               >
-                Закрыть
+                {kk ? "Жабу" : "Закрыть"}
               </button>
             </div>
           </div>
@@ -3251,17 +3309,25 @@ export default function Page() {
             <div
               role="dialog"
               aria-modal="true"
-              aria-label="Операция заморожена Семейным Щитом"
+              aria-label={
+                kk
+                  ? "Операция Отбасылық қалқанмен мұздатылды"
+                  : "Операция заморожена Семейным Щитом"
+              }
               className="w-full max-w-[330px] animate-fade-rise rounded-2xl border border-[#8B5CF6]/40 bg-[#0B1F17] p-5 shadow-panel"
             >
               <div className="grid h-11 w-11 place-items-center rounded-xl border border-[#8B5CF6]/35 bg-[#8B5CF6]/10 text-[#C4B5FD]">
                 <Lock size={20} />
               </div>
               <h2 className="mt-3 text-[16px] font-medium leading-tight tracking-[-0.01em]">
-                Операция заморожена Семейным Щитом
+                {kk
+                  ? "Операция Отбасылық қалқанмен мұздатылды"
+                  : "Операция заморожена Семейным Щитом"}
               </h2>
               <p className="mt-1 text-[10px] leading-snug text-[#7FA793]">
-                Требуется одобрение Хранителя семьи. Статус перевода:{" "}
+                {kk
+                  ? "Отбасы Қорғаушысының растауы қажет. Аударым мәртебесі:"
+                  : "Требуется одобрение Хранителя семьи. Статус перевода:"}{" "}
                 <span className="font-mono text-[#C4B5FD]">HOLD_MULTISIG</span>
               </p>
 
@@ -3270,7 +3336,7 @@ export default function Page() {
                   <span className="text-[9.5px] text-[#A9CBB9]">
                     {hold.to}
                   </span>
-                  <span className="font-mono text-[13px] tabular-nums text-[#E8F5EE]">
+                  <span className="whitespace-nowrap font-mono text-[13px] tabular-nums text-[#E8F5EE]">
                     {formatKzt(hold.amount)}
                   </span>
                 </div>
@@ -3285,7 +3351,9 @@ export default function Page() {
                 onClick={openGuardPayForHold}
                 className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#00A859] px-3 py-2.5 text-[11px] font-semibold text-[#04130C] transition-colors hover:bg-[#10B981]"
               >
-                Открыть GuardPay в режиме Хранителя
+                {kk
+                  ? "GuardPay-ды Қорғаушы режимінде ашу"
+                  : "Открыть GuardPay в режиме Хранителя"}
                 <ArrowRight size={13} />
               </button>
               <button
@@ -3293,7 +3361,7 @@ export default function Page() {
                 onClick={() => setModal({ kind: "none" })}
                 className="mt-1.5 w-full rounded-lg border border-[#1E4233] px-3 py-2 text-[10.5px] text-[#A9CBB9] transition-colors hover:bg-[#122B21]"
               >
-                Оставить в очереди
+                {kk ? "Кезекте қалдыру" : "Оставить в очереди"}
               </button>
             </div>
           </div>
@@ -3309,7 +3377,7 @@ export default function Page() {
           <div
             role="dialog"
             aria-modal="true"
-            aria-label="Операция заблокирована"
+            aria-label={kk ? "Операция бұғатталды" : "Операция заблокирована"}
             className="w-full max-w-[332px] animate-fade-rise rounded-2xl border border-[#EF4444]/45 bg-[#0B1F17] p-5 shadow-panel"
           >
             <div className="flex items-start justify-between gap-2">
@@ -3322,10 +3390,14 @@ export default function Page() {
             </div>
 
             <h2 className="mt-3 text-[16px] font-medium leading-tight tracking-[-0.01em]">
-              Операция заблокирована системой BCC Shield 360
+              {kk
+                ? "Операция BCC Shield 360 жүйесімен бұғатталды"
+                : "Операция заблокирована системой BCC Shield 360"}
             </h2>
             <p className="mt-1 text-[10px] leading-snug text-[#7FA793]">
-              Сработала комбинация триггеров. Деньги не покинули счет.
+              {kk
+                ? "Триггерлер комбинациясы іске қосылды. Ақша шоттан шыққан жоқ."
+                : "Сработала комбинация триггеров. Деньги не покинули счет."}
             </p>
 
             <div className="mt-2.5 space-y-1">
@@ -3349,8 +3421,9 @@ export default function Page() {
             </div>
 
             <p className="mt-2.5 text-[9px] leading-snug text-[#A9CBB9]">
-              Если это ошибка, позвоните в BCC по номеру с обратной стороны
-              карты. Не продолжайте операцию под давлением звонящего.
+              {kk
+                ? "Егер бұл қате болса, BCC-ге картаның артындағы нөмір арқылы қоңырау шалыңыз. Қоңырау шалушының қысымымен операцияны жалғастырмаңыз."
+                : "Если это ошибка, позвоните в BCC по номеру с обратной стороны карты. Не продолжайте операцию под давлением звонящего."}
             </p>
 
             <button
@@ -3379,14 +3452,14 @@ export default function Page() {
               className="mt-1.5 flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#00A859] px-3 py-2.5 text-[11px] font-semibold text-[#04130C] transition-colors hover:bg-[#10B981]"
             >
               <RotateCcw size={13} />
-              Сбросить атаку
+              {kk ? "Шабуылды тазарту" : "Сбросить атаку"}
             </button>
             <button
               type="button"
               onClick={() => setModal({ kind: "none" })}
               className="mt-1.5 w-full rounded-lg border border-[#1E4233] px-3 py-2 text-[10.5px] text-[#A9CBB9] transition-colors hover:bg-[#122B21]"
             >
-              Вернуться
+              {kk ? "Қайту" : "Вернуться"}
             </button>
           </div>
         </div>
@@ -3399,7 +3472,7 @@ export default function Page() {
       <button
         type="button"
         onClick={() => setJuryOpen(true)}
-        className="fixed right-3 top-[max(12px,env(safe-area-inset-top))] z-40 inline-flex items-center gap-1.5 rounded-full border border-[#1E4233] bg-[#0B1F17]/95 px-3 py-1.5 text-[11px] font-medium text-[#A7F3D0] shadow-lg backdrop-blur lg:hidden"
+        className="fixed right-3 bottom-[calc(78px+env(safe-area-inset-bottom))] z-40 inline-flex items-center gap-1.5 rounded-full border border-[#1E4233] bg-[#0B1F17]/95 px-3 py-1.5 text-[11px] font-medium text-[#A7F3D0] shadow-lg backdrop-blur lg:hidden"
       >
         <Zap size={12} className="text-[#34D399]" />
         ⚡ Пульт жюри
@@ -3528,14 +3601,16 @@ export default function Page() {
                   <p className="mt-5 text-[10px] text-[#8FB6A1]">
                     {t("balanceLabel")}
                   </p>
-                  <p className="mt-0.5 text-[28px] font-medium leading-none tabular-nums tracking-[-0.02em]">
-                    {formatKzt(balance)}
+                  <p className="mt-0.5 whitespace-nowrap text-[26px] font-medium leading-none tabular-nums tracking-[-0.02em] sm:text-[28px]">
+                    {formatKzt(activeBalance)}
                   </p>
 
                   <div className="mt-4 flex items-end justify-between gap-3">
                     <div>
                       <p className="font-mono text-[11px] tracking-[0.06em] text-[#B8D4C5]">
-                        {OWN_CARD}
+                        {role === "protected"
+                          ? "4400 43** **** 3109"
+                          : OWN_CARD}
                       </p>
                       <p className="mt-1 text-[9px] text-[#648975]">
                         Дебетовая карта · KZT
@@ -3654,7 +3729,7 @@ export default function Page() {
                       inputMode="numeric"
                       autoComplete="off"
                       placeholder="0"
-                      className="h-full w-full bg-transparent pr-8 text-[22px] font-medium tabular-nums text-[#E8F5EE] outline-none"
+                      className="h-full w-full min-w-0 bg-transparent pr-8 text-[22px] font-medium tabular-nums text-[#E8F5EE] outline-none"
                     />
                     <span className="absolute right-3 text-[14px] text-[#7FA793]">
                       ₸
@@ -3670,7 +3745,7 @@ export default function Page() {
                           setAmountText(String(quickAmount));
                           setFormError("");
                         }}
-                        className="rounded-lg border border-[#1E4233] bg-[#0B1F17] px-1 py-1.5 text-[10.5px] tabular-nums text-[#A9CBB9] transition-colors hover:border-[#34D399]/35 hover:text-[#E8F5EE]"
+                        className="whitespace-nowrap rounded-lg border border-[#1E4233] bg-[#0B1F17] px-0.5 py-1.5 text-[10.5px] tabular-nums text-[#A9CBB9] transition-colors hover:border-[#34D399]/35 hover:text-[#E8F5EE]"
                       >
                         {formatNumber(quickAmount)} ₸
                       </button>
@@ -3739,7 +3814,7 @@ export default function Page() {
                               {transfer.timeLabel} · {transfer.status}
                             </p>
                           </div>
-                          <span className="shrink-0 font-mono text-[11px] tabular-nums text-[#CFE8DC]">
+                          <span className="shrink-0 whitespace-nowrap font-mono text-[11px] tabular-nums text-[#CFE8DC]">
                             −{formatKzt(transfer.amount)}
                           </span>
                         </li>
@@ -3884,7 +3959,7 @@ export default function Page() {
                               {t("amountOnReceipt")}
                             </p>
                             <p
-                              className={`mt-1 text-[24px] font-medium leading-none tabular-nums tracking-[-0.02em] ${
+                              className={`mt-1 whitespace-nowrap text-[24px] font-medium leading-none tabular-nums tracking-[-0.02em] ${
                                 tampered ? "text-[#FCA5A5]" : "text-[#E8F5EE]"
                               }`}
                             >
@@ -4078,7 +4153,7 @@ export default function Page() {
                       <p className="text-[8.5px] text-[#7FA793]">
                         {t("savedLabel")}
                       </p>
-                      <p className="mt-0.5 font-mono text-[12px] tabular-nums text-[#6EE7B7]">
+                      <p className="mt-0.5 whitespace-nowrap font-mono text-[12px] tabular-nums text-[#6EE7B7]">
                         {formatKzt(savedTotal)}
                       </p>
                     </div>
@@ -4136,6 +4211,12 @@ export default function Page() {
                             {relative.age} лет · лимит{" "}
                             {formatKzt(relative.limit)} в день
                           </p>
+                          {relative.isApashka && (
+                            <p className="mt-0.5 font-mono text-[8.5px] text-[#6EE7B7]">
+                              {lang === "kk" ? "Шот қалдығы" : "Остаток счета"}:{" "}
+                              {formatKzt(familyBalance)}
+                            </p>
+                          )}
                         </div>
                         <span className="inline-flex shrink-0 items-center gap-1 text-[8.5px] text-[#6EE7B7]">
                           <span className="h-1 w-1 rounded-full bg-[#10B981]" />
@@ -4214,7 +4295,7 @@ export default function Page() {
                           </span>
                         </div>
 
-                        <p className="mt-2 font-mono text-[19px] font-medium tabular-nums text-[#E8F5EE]">
+                        <p className="mt-2 whitespace-nowrap font-mono text-[19px] font-medium tabular-nums text-[#E8F5EE]">
                           {formatKzt(hold.amount)}
                         </p>
 
