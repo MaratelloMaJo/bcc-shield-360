@@ -30,6 +30,7 @@ import {
   FileJson,
   Fingerprint,
   Gauge,
+  Headset,
   KeyRound,
   Landmark,
   Link2,
@@ -37,6 +38,7 @@ import {
   Lock,
   MessageSquareWarning,
   Mic,
+  PhoneIncoming,
   PhoneOff,
   Radar,
   RotateCcw,
@@ -48,12 +50,14 @@ import {
   Signal,
   Siren,
   Timer,
+  UserRound,
   Users,
   Wifi,
   X,
   XCircle,
   Zap,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import {
   analyzeScamText,
   type ScamAnalysis,
@@ -248,16 +252,16 @@ const RU_DICT = {
   unknownRecipient: "Неизвестный получатель",
   dropperCard: "Карта дроппера",
   cardLabel: "Карта или телефон получателя",
-  pasteWhatsApp: "📋 Вставить карту из WhatsApp",
+  pasteWhatsApp: "Вставить карту из WhatsApp",
   amountLabel: "Сумма перевода",
   riskPreview: "Предрасчет риска",
   sendButton: "Перевести",
   recentOps: "Последние операции",
   noOps: "Проведенных операций пока нет",
   bannerScam:
-    "⚠️ Обнаружен активный телефонный вызов с неизвестного номера! Включен усиленный контроль SafeCall",
-  bannerOfficial: "🛡️ Верифицированный звонок BCC. Код:",
-  liveTitle: "🎙️ Live Audio-to-Text (Потоковый детектор речи)",
+    "Обнаружен активный телефонный вызов с неизвестного номера. Включен усиленный контроль SafeCall",
+  bannerOfficial: "Верифицированный звонок BCC. Код:",
+  liveTitle: "Live Audio-to-Text (Потоковый детектор речи)",
   liveHint: "Распознавание речи на устройстве · без записи в облако",
   liveScamLabel: "Неизвестный номер · SIP-спуфинг",
   liveOfficialLabel: "Официальный канал BCC",
@@ -266,9 +270,9 @@ const RU_DICT = {
   radarVerified: "VERIFIED",
   radarMonitoring: "МОНИТОРИНГ",
   radarScamText:
-    "🚨 ТРЕВОГА: Идет вызов, но сервер BCC НЕ подтверждает звонок! Это подмена номера (SIP-спуфинг). Немедленно положите трубку!",
+    "Тревога: идет вызов, но сервер BCC не подтверждает звонок. Это подмена номера (SIP-спуфинг). Немедленно положите трубку",
   radarVerifiedText:
-    "✅ ВЕРИФИЦИРОВАНО: С вами говорит Айгерим Садыкова (Отдел мониторинга BCC)",
+    "ВЕРИФИЦИРОВАНО: С вами говорит Айгерим Садыкова (Отдел мониторинга BCC)",
   radarIdleText:
     "Линия чиста: активных звонков от BCC нет. SIP-мониторинг работает в фоне.",
   sessionWord: "Одноразовое кодовое слово сессии",
@@ -283,11 +287,11 @@ const RU_DICT = {
   receiptSender: "Отправитель",
   receiptRecipient: "Получатель",
   signatureLabel: "Цифровая подпись",
-  tamperOn: "🛠 Подделать сумму в чеке (+00 в Фотошопе)",
+  tamperOn: "Подделать сумму в чеке (+00 в Фотошопе)",
   tamperOff: "Вернуть оригинальную сумму чека",
   verifyCta: "Запустить крипто-проверку чека",
   verifyRunning: "Пересчитываем HMAC-SHA256…",
-  passportOpen: "🔐 Открыть крипто-паспорт HMAC-SHA256",
+  passportOpen: "Открыть крипто-паспорт HMAC-SHA256",
   passportClose: "Свернуть крипто-паспорт",
   passportCanonical: "Каноническая строка сериализации",
   passportAlgorithm: "Статус алгоритма",
@@ -295,7 +299,7 @@ const RU_DICT = {
   passportActual: "Фактический хеш документа сейчас",
   passportMismatch:
     "❌ НЕСОВПАДЕНИЕ ХЕШ-СУММ (ЛАВИННЫЙ ЭФФЕКТ SHA-256): Документ сфальсифицирован после выпуска!",
-  passportMatch: "✅ Хеши совпадают: чек подлинный",
+  passportMatch: "Хеши совпадают: чек подлинный",
   guardCircle: "Круг защиты",
   familyMultisig: "Семейный мультисиг",
   savedLabel: "Спасено от мошенников",
@@ -303,8 +307,8 @@ const RU_DICT = {
   protectedTab: "Апашка, 68 лет",
   requestsTitle: "Запросы на подтверждение",
   noHolds: "Замороженных переводов нет",
-  approveHold: "✅ Одобрить и провести",
-  blockHold: "🛑 Заблокировать перевод (Спасти средства)",
+  approveHold: "Одобрить и провести",
+  blockHold: "Заблокировать перевод (Спасти средства)",
   guardianOnly: "Одобрение доступно Хранителю семьи",
   holdPending: "НА ПОДТВЕРЖДЕНИИ",
   holdApproved: "ПРОВЕДЕНО",
@@ -317,17 +321,17 @@ const RU_DICT = {
   analyzeButton: "Анализировать через AI Scam-Scanner",
   analyzingButton: "Анализируем текст…",
   piiBadge:
-    "🛡️ Закон РК о ПДн: ИИН и номера карт автоматически обезличены на устройстве до отправки в ИИ",
+    "Закон РК о ПДн: ИИН и номера карт автоматически обезличены на устройстве до отправки в ИИ",
   maskedTextLabel: "Обезличенный текст, который ушел в анализ",
   probabilityLabel: "Вероятность мошенничества",
   triggersLabel: "Найденные приемы",
   activateProtection:
-    "⚡ Активировать повышенную защиту в Risk Engine (+25 к порогу безопасности)",
+    "Активировать повышенную защиту в Risk Engine (+25 к порогу безопасности)",
   protectionActive: "Повышенная защита активна (+25)",
-  reportCta: "🏛️ Сформировать рапорт в Антифрод-центр НБ РК",
+  reportCta: "Сформировать рапорт в Антифрод-центр НБ РК",
   reportTitle: "Рапорт в Антифрод-центр НБ РК",
   reportSent: "Отправлено в шлюз НБ РК",
-  copyJson: "📋 Скопировать JSON рапорта",
+  copyJson: "Скопировать JSON рапорта",
   copied: "Скопировано",
   close: "Закрыть",
   juryTitle: "Jury Control",
@@ -336,7 +340,7 @@ const RU_DICT = {
   stormTitle: "Сценарий «Идеальный шторм»",
   stormHint: "Звонок мошенника + буфер + 450 000 ₸ в один клик",
   resetTriggers: "Сбросить все триггеры",
-  resetDemo: "🔄 Сбросить демо к исходному состоянию",
+  resetDemo: "Сбросить демо к исходному состоянию",
   langRu: "RU",
   langKk: "ҚАЗ",
 } as const;
@@ -371,16 +375,16 @@ const KK_DICT: Record<DictKey, string> = {
   unknownRecipient: "Белгісіз алушы",
   dropperCard: "Дроппер картасы",
   cardLabel: "Алушының картасы немесе телефоны",
-  pasteWhatsApp: "📋 Картаны WhatsApp-тан қою",
+  pasteWhatsApp: "Картаны WhatsApp-тан қою",
   amountLabel: "Аударым сомасы",
   riskPreview: "Тәуекелді алдын ала есептеу",
   sendButton: "Аудару",
   recentOps: "Соңғы операциялар",
   noOps: "Әзірге операция жоқ",
   bannerScam:
-    "⚠️ Белгісіз нөмірден белсенді қоңырау анықталды! SafeCall күшейтілген бақылауы қосылды",
-  bannerOfficial: "🛡️ BCC расталған қоңырауы. Код:",
-  liveTitle: "🎙️ Live Audio-to-Text (Сөйлеуді ағындық анықтау)",
+    "Белгісіз нөмірден белсенді қоңырау анықталды. SafeCall күшейтілген бақылауы қосылды",
+  bannerOfficial: "BCC расталған қоңырауы. Код:",
+  liveTitle: "Live Audio-to-Text (Сөйлеуді ағындық анықтау)",
   liveHint: "Сөйлеуді құрылғыда тану · бұлтқа жазбайды",
   liveScamLabel: "Белгісіз нөмір · SIP-спуфинг",
   liveOfficialLabel: "BCC ресми арнасы",
@@ -389,9 +393,9 @@ const KK_DICT: Record<DictKey, string> = {
   radarVerified: "VERIFIED",
   radarMonitoring: "МОНИТОРИНГ",
   radarScamText:
-    "🚨 ДАБЫЛ: қоңырау жүріп жатыр, бірақ BCC сервері оны растамайды! Бұл нөмірді ауыстыру (SIP-спуфинг). Трубканы дереу қойыңыз!",
+    "Дабыл: қоңырау жүріп жатыр, бірақ BCC сервері оны растамайды. Бұл нөмірді ауыстыру (SIP-спуфинг). Трубканы дереу қойыңыз",
   radarVerifiedText:
-    "✅ РАСТАЛДЫ: сізбен Айгерим Садықова (BCC мониторинг бөлімі) сөйлесіп отыр",
+    "РАСТАЛДЫ: сізбен Айгерим Садықова (BCC мониторинг бөлімі) сөйлесіп отыр",
   radarIdleText:
     "Желі таза: BCC-тен белсенді қоңырау жоқ. SIP-мониторинг фонда жұмыс істейді.",
   sessionWord: "Сессияның бір реттік кодтық сөзі",
@@ -406,11 +410,11 @@ const KK_DICT: Record<DictKey, string> = {
   receiptSender: "Жіберуші",
   receiptRecipient: "Алушы",
   signatureLabel: "Цифрлық қолтаңба",
-  tamperOn: "🛠 Чектегі соманы бұрмалау (+00 Photoshop-та)",
+  tamperOn: "Чектегі соманы бұрмалау (+00 Photoshop-та)",
   tamperOff: "Чектің түпнұсқа сомасын қайтару",
   verifyCta: "Чекті крипто-тексеруді бастау",
   verifyRunning: "HMAC-SHA256 қайта есептелуде…",
-  passportOpen: "🔐 HMAC-SHA256 крипто-паспортын ашу",
+  passportOpen: "HMAC-SHA256 крипто-паспортын ашу",
   passportClose: "Крипто-паспортты жабу",
   passportCanonical: "Сериализацияның канондық жолы",
   passportAlgorithm: "Алгоритм мәртебесі",
@@ -418,7 +422,7 @@ const KK_DICT: Record<DictKey, string> = {
   passportActual: "Құжаттың қазіргі нақты хеші",
   passportMismatch:
     "❌ ХЕШ СУММАЛАРЫ СӘЙКЕС ЕМЕС (SHA-256 ЛАВИНА ӘСЕРІ): Құжат шығарылғаннан кейін бұрмаланған!",
-  passportMatch: "✅ Хештер сәйкес: чек түпнұсқа",
+  passportMatch: "Хештер сәйкес: чек түпнұсқа",
   guardCircle: "Қорғаныс шеңбері",
   familyMultisig: "Отбасылық мультисиг",
   savedLabel: "Алаяқтардан сақталды",
@@ -426,8 +430,8 @@ const KK_DICT: Record<DictKey, string> = {
   protectedTab: "Апашка, 68 жаста",
   requestsTitle: "Растау сұраныстары",
   noHolds: "Мұздатылған аударым жоқ",
-  approveHold: "✅ Мақұлдап, өткізу",
-  blockHold: "🛑 Аударымды бұғаттау (Ақшаны сақтау)",
+  approveHold: "Мақұлдап, өткізу",
+  blockHold: "Аударымды бұғаттау (Ақшаны сақтау)",
   guardianOnly: "Мақұлдау отбасы Қорғаушысына қолжетімді",
   holdPending: "РАСТАУДА",
   holdApproved: "ӨТКІЗІЛДІ",
@@ -440,17 +444,17 @@ const KK_DICT: Record<DictKey, string> = {
   analyzeButton: "AI Сканер арқылы талдау",
   analyzingButton: "Мәтін талдануда…",
   piiBadge:
-    "🛡️ ҚР ЖД туралы заң: ЖСН мен карта нөмірлері ИИ-ға жіберілмей тұрып құрылғыда автоматты түрде жасырылады",
+    "ҚР ЖД туралы заң: ЖСН мен карта нөмірлері ИИ-ға жіберілмей тұрып құрылғыда автоматты түрде жасырылады",
   maskedTextLabel: "Талдауға кеткен жасырылған мәтін",
   probabilityLabel: "Алаяқтық ықтималдығы",
   triggersLabel: "Табылған әдістер",
   activateProtection:
-    "⚡ Risk Engine-де күшейтілген қорғанысты қосу (+25)",
+    "Risk Engine-де күшейтілген қорғанысты қосу (+25)",
   protectionActive: "Күшейтілген қорғаныс белсенді (+25)",
-  reportCta: "🏛️ ҚР ҰБ Антифрод орталығына есеп жасау",
+  reportCta: "ҚР ҰБ Антифрод орталығына есеп жасау",
   reportTitle: "ҚР ҰБ Антифрод орталығына есеп",
   reportSent: "ҚР ҰБ шлюзіне жіберілді",
-  copyJson: "📋 Есептің JSON көшіру",
+  copyJson: "Есептің JSON көшіру",
   copied: "Көшірілді",
   close: "Жабу",
   juryTitle: "Jury Control",
@@ -459,7 +463,7 @@ const KK_DICT: Record<DictKey, string> = {
   stormTitle: "«Идеалды дауыл» сценарийі",
   stormHint: "Алаяқ қоңырауы + буфер + 450 000 ₸ бір басумен",
   resetTriggers: "Барлық триггерлерді тазарту",
-  resetDemo: "🔄 Демоны бастапқы күйге қайтару",
+  resetDemo: "Демоны бастапқы күйге қайтару",
   langRu: "RU",
   langKk: "ҚАЗ",
 };
@@ -554,40 +558,48 @@ const SEED_HOLD: HoldRequest = {
 const SCAM_PRESETS = [
   {
     id: "nbk",
-    label: '🏦 Сценарий "Нацбанк и КНБ"',
+    label: 'Сценарий "Нацбанк и КНБ"',
     short: "Ложный следователь и «резервный счет»",
     text:
       "Здравствуйте, это старший следователь департамента полиции и куратор Нацбанка РК. На ваше имя прямо сейчас в отделении пытаются оформить зеркальный кредит на 5 миллионов тенге. Чтобы аннулировать заявку, срочно переведите средства на резервный защищенный счет Нацбанка, никому не сообщайте об операции — идет секретная проверка!",
   },
   {
     id: "delivery",
-    label: '📦 Сценарий "Курьер Казпочты / Доставка"',
+    label: 'Сценарий "Курьер Казпочты / Доставка"',
     short: "Просьба продиктовать код из SMS",
     text:
       "Вам пришла заказная посылка с маркетплейса. Для оформления возврата или переадресации курьеру продиктуйте, пожалуйста, 4-значный код, который только что пришел вам в SMS от 1414 / банка.",
   },
   {
     id: "invest",
-    label: '📈 Сценарий "Лже-инвестиции нацкомпаний"',
+    label: 'Сценарий "Лже-инвестиции нацкомпаний"',
     short: "Гарантированные дивиденды и привязка карты",
     text:
       "Государственная программа инвестиций для граждан Казахстана! Вложите 50 000 тенге сегодня и получайте гарантированные дивиденды от добычи нефти до 850 000 тенге каждую неделю. Переходите по ссылке для привязки карты.",
   },
   {
     id: "legit",
-    label: '💬 Сценарий "Легитимное сообщение"',
+    label: 'Сценарий "Легитимное сообщение"',
     short: "Обычная просьба друга",
     text:
       "Марат, привет! Скинь, пожалуйста, 5 000 тенге за вчерашний кофе и обед, когда будешь свободен. Спасибо!",
   },
   {
     id: "pii",
-    label: "🪪 Тест ПДн: ИИН и карта в тексте",
+    label: "Тест ПДн: ИИН и карта в тексте",
     short: "Проверка обезличивания до отправки в ИИ",
     text:
       "Здравствуйте! Для возврата средств подтвердите ИИН 990101300123 и номер карты 4400 4301 9928 7741. Код из SMS сообщите оператору срочно.",
   },
 ];
+
+const PRESET_ICONS: Record<string, LucideIcon> = {
+  nbk: Landmark,
+  delivery: Building2,
+  invest: Activity,
+  legit: MessageSquareWarning,
+  pii: Fingerprint,
+};
 
 const PHISH_PRESETS: PhishAnalysis[] = [
   {
@@ -2047,14 +2059,14 @@ const JURY_TONE: Record<
 };
 
 function JuryToggleRow({
-  glyph,
+  icon: Icon,
   label,
   hint,
   checked,
   tone,
   onChange,
 }: {
-  glyph: string;
+  icon: LucideIcon;
   label: string;
   hint: string;
   checked: boolean;
@@ -2071,12 +2083,12 @@ function JuryToggleRow({
       }`}
     >
       <span
-        className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg text-[15px] ${
+        className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${
           checked ? palette.activeIcon : palette.inactiveIcon
         }`}
         aria-hidden="true"
       >
-        {glyph}
+        <Icon size={16} strokeWidth={1.9} />
       </span>
       <div className="min-w-0 flex-1">
         <p className="text-[11.5px] font-medium leading-tight text-[#E8F5EE]">
@@ -2197,7 +2209,7 @@ function JuryPanel({
         </div>
         <div className="space-y-1.5">
           <JuryToggleRow
-            glyph="📞"
+            icon={PhoneIncoming}
             label="Симулировать звонок с неизвестного номера"
             hint="+35 к риску · TrustLens не подтверждает сессию"
             checked={factors.unverifiedCallActive}
@@ -2205,7 +2217,7 @@ function JuryPanel({
             onChange={onToggleUnverifiedCall}
           />
           <JuryToggleRow
-            glyph="🎧"
+            icon={Headset}
             label="Официальный звонок оператора BCC"
             hint="TrustLens Verified · взаимоисключающий с п.1"
             checked={factors.officialBccCallActive}
@@ -2213,7 +2225,7 @@ function JuryPanel({
             onChange={onToggleOfficialCall}
           />
           <JuryToggleRow
-            glyph="📋"
+            icon={ClipboardPaste}
             label="Вставка карты дроппера из буфера"
             hint="+20 к риску · заполняет 4400 4301 9928 7741"
             checked={factors.clipboardUsed}
@@ -2221,7 +2233,7 @@ function JuryPanel({
             onChange={onToggleClipboard}
           />
           <JuryToggleRow
-            glyph="👵"
+            icon={UserRound}
             label={
               role === "protected"
                 ? "Профиль: Апашка, 68 лет, под защитой"
@@ -3469,15 +3481,6 @@ export default function Page() {
 
   return (
     <div className="h-[100dvh] w-full overflow-hidden bg-[#06110C] text-[#E8F5EE] lg:h-auto lg:min-h-[100dvh] lg:overflow-visible">
-      <button
-        type="button"
-        onClick={() => setJuryOpen(true)}
-        className="fixed right-3 bottom-[calc(78px+env(safe-area-inset-bottom))] z-40 inline-flex items-center gap-1.5 rounded-full border border-[#1E4233] bg-[#0B1F17]/95 px-3 py-1.5 text-[11px] font-medium text-[#A7F3D0] shadow-lg backdrop-blur lg:hidden"
-      >
-        <Zap size={12} className="text-[#34D399]" />
-        ⚡ Пульт жюри
-      </button>
-
       <div className="h-full w-full lg:mx-auto lg:flex lg:min-h-[100dvh] lg:max-w-[1500px] lg:items-center lg:justify-center lg:gap-10 lg:px-8 lg:py-4">
         <div className="relative flex h-full w-full flex-col overflow-hidden bg-[#0B1F17] lg:h-[852px] lg:w-[395px] lg:shrink-0 lg:rounded-[46px] lg:border-[10px] lg:border-[#1C2E26] lg:shadow-phone">
           {/* iOS status bar (desktop frame only) */}
@@ -3499,7 +3502,7 @@ export default function Page() {
           </div>
 
           <header className="relative z-10 shrink-0 px-4 pb-3 pt-[max(14px,env(safe-area-inset-top))] lg:pt-1">
-            <div className="flex items-center justify-between gap-2 pr-24 lg:pr-0">
+            <div className="flex items-center justify-between gap-2 lg:pr-0">
               <div className="flex min-w-0 items-center gap-2.5">
                 <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#00A859] text-[#04130C]">
                   <ShieldCheck size={18} strokeWidth={2.3} />
@@ -3514,6 +3517,14 @@ export default function Page() {
                 </div>
               </div>
               <div className="flex shrink-0 items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setJuryOpen(true)}
+                  aria-label="Пульт жюри"
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-[#1E4233] bg-[#06110C]/70 text-[#34D399] transition-colors hover:text-[#A7F3D0] lg:hidden"
+                >
+                  <Zap size={14} />
+                </button>
                 <LangSwitch lang={lang} onChange={setLang} compact />
                 <span className="hidden shrink-0 items-center gap-1.5 rounded-full border border-[#10B981]/30 bg-[#10B981]/10 px-2 py-1 text-[9.5px] text-[#6EE7B7] lg:inline-flex">
                   <span className="h-1.5 w-1.5 rounded-full bg-[#10B981]" />
@@ -4099,7 +4110,7 @@ export default function Page() {
                                 }`}
                               >
                                 {verifyResult.isValid
-                                  ? "✅ ЧЕК ПОДЛИННЫЙ"
+                                  ? "ЧЕК ПОДЛИННЫЙ"
                                   : "❌ ОБНАРУЖЕНА ПОДДЕЛКА"}
                               </p>
                               <p className="mt-0.5 text-[9.5px] leading-snug text-[#A9CBB9]">
@@ -4274,7 +4285,7 @@ export default function Page() {
                             <p className="text-[10px] text-[#7FA793]">
                               {hold.fromAlias} → получатель
                             </p>
-                            <p className="mt-0.5 truncate text-[10.5px] text-[#E8F5EE]">
+                            <p className="mt-0.5 text-[10.5px] leading-snug text-[#E8F5EE]">
                               {hold.to}
                             </p>
                           </div>
@@ -4588,25 +4599,34 @@ export default function Page() {
                   </div>
 
                   <div className="mt-2.5 space-y-1.5">
-                    {SCAM_PRESETS.map((preset) => (
-                      <button
-                        key={preset.id}
-                        type="button"
-                        onClick={() => {
-                          setScamText(preset.text);
-                          setScamResult(null);
-                          setScamError("");
-                        }}
-                        className="w-full rounded-lg border border-[#1E4233] bg-[#0B1F17] px-2.5 py-2 text-left transition-colors hover:border-[#34D399]/30"
-                      >
-                        <span className="block text-[10.5px] font-medium text-[#E8F5EE]">
-                          {preset.label}
-                        </span>
-                        <span className="mt-0.5 block text-[9px] text-[#7FA793]">
-                          {preset.short}
-                        </span>
-                      </button>
-                    ))}
+                    {SCAM_PRESETS.map((preset) => {
+                      const Icon = PRESET_ICONS[preset.id] ?? MessageSquareWarning;
+                      return (
+                        <button
+                          key={preset.id}
+                          type="button"
+                          onClick={() => {
+                            setScamText(preset.text);
+                            setScamResult(null);
+                            setScamError("");
+                          }}
+                          className="flex w-full items-start gap-2 rounded-lg border border-[#1E4233] bg-[#0B1F17] px-2.5 py-2 text-left transition-colors hover:border-[#34D399]/30"
+                        >
+                          <Icon
+                            size={13}
+                            className="mt-0.5 shrink-0 text-[#34D399]"
+                          />
+                          <span className="min-w-0">
+                            <span className="block text-[10.5px] font-medium text-[#E8F5EE]">
+                              {preset.label}
+                            </span>
+                            <span className="mt-0.5 block text-[9px] text-[#7FA793]">
+                              {preset.short}
+                            </span>
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
 
                   <button
@@ -4727,7 +4747,7 @@ export default function Page() {
                           {scamResult.pii.length > 0 && (
                             <div className="mt-2 flex flex-wrap gap-1">
                               <span className="rounded border border-[#34D399]/30 bg-[#34D399]/10 px-1.5 py-0.5 text-[7.5px] text-[#A7F3D0]">
-                                🛡️ PII redacted on-device
+                                PII redacted on-device
                               </span>
                               {scamResult.pii.map((finding) => (
                                 <span
@@ -4936,8 +4956,8 @@ export default function Page() {
                 <p className="text-[9.5px] text-[#7FA793]">
                   ITU Hackathon 2026 · BCC Bank
                 </p>
-                <p className="mt-0.5 truncate text-[13px] font-medium text-[#E8F5EE]">
-                  Пульт симуляции атак
+                <p className="mt-0.5 text-[13px] font-medium text-[#E8F5EE]">
+                  Пульт жюри
                 </p>
               </div>
               <button
