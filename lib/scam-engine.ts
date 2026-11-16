@@ -11,6 +11,20 @@ export interface ScamTrigger {
   end: number;
 }
 
+export type PiiKind = "iin" | "card";
+
+export interface PiiFinding {
+  type: PiiKind;
+  label: string;
+  count: number;
+}
+
+export interface PiiScrubResult {
+  maskedText: string;
+  findings: PiiFinding[];
+  redactedCount: number;
+}
+
 export interface ScamAnalysis {
   score: number;
   category: string;
@@ -18,6 +32,8 @@ export interface ScamAnalysis {
   verdict: string;
   advice: string[];
   triggers: ScamTrigger[];
+  pii: PiiFinding[];
+  maskedText: string;
   aiAssisted: boolean;
   engine: "deterministic" | "hybrid";
 }
@@ -29,6 +45,58 @@ interface ScamPattern {
   severity: ScamSeverity;
   weight: number;
   regex: RegExp;
+}
+
+/**
+ * On-device PII scrubber for Kazakhstan.
+ *
+ * A 12-digit IIN and a 16-digit card PAN are replaced before any text leaves
+ * the device or reaches the LLM. The original digits are never returned, only
+ * aggregate findings, so the scanner UI can explain what was protected.
+ */
+const IIN_TOKEN = "[ИИН СКРЫТ ЗАЩИТОЙ ПДн РК]";
+const CARD_TOKEN = "[КАРТА СКРЫТА]";
+
+const IIN_REGEX = /(?<!\d)\d{12}(?!\d)/g;
+const CARD_REGEX = /(?<!\d)(?:\d[ -]?){15}\d(?!\d)/g;
+
+export function scrubPii(text: string): PiiScrubResult {
+  let cardCount = 0;
+  let iinCount = 0;
+
+  const withoutCards = text.replace(CARD_REGEX, () => {
+    cardCount += 1;
+    return CARD_TOKEN;
+  });
+
+  const maskedText = withoutCards.replace(IIN_REGEX, () => {
+    iinCount += 1;
+    return IIN_TOKEN;
+  });
+
+  const findings: PiiFinding[] = [];
+
+  if (iinCount > 0) {
+    findings.push({
+      type: "iin",
+      label: "ИИН физического лица",
+      count: iinCount,
+    });
+  }
+
+  if (cardCount > 0) {
+    findings.push({
+      type: "card",
+      label: "Номер банковской карты",
+      count: cardCount,
+    });
+  }
+
+  return {
+    maskedText,
+    findings,
+    redactedCount: iinCount + cardCount,
+  };
 }
 
 /**
@@ -48,6 +116,16 @@ const PATTERNS: ScamPattern[] = [
       /(нацбанк[а-яё]*|национальн[а-яё]*\s+банк[а-яё]*|кнб|комитет[а-яё]*\s+национальн[а-яё]*\s+безопасност[а-яё]*|департамент[а-яё]*\s+полиции|следовател[а-яё]*|куратор[а-яё]*|прокуратур[а-яё]*|спецслужб[а-яё]*)/gi,
   },
   {
+    id: "kz_authority",
+    label: "Ұлттық банк / ҚҰК атын жамылу",
+    explanation:
+      "Қазақстандағы ресми органдардың атын пайдаланып, қорқыту арқылы адамды басқару — танымал алаяқтық әдісі.",
+    severity: "critical",
+    weight: 30,
+    regex:
+      /(ұлттық\s+банк[а-яёіңғүұқөһә]*|ұлттық\s+қауіпсіздік\s+комитет[а-яёіңғүұқөһә]*|бас\s+прокурор[а-яёіңғүұқөһә]*|ішкі\s+істер\s+министрліг[а-яёіңғүұқөһә]*|тергеуші[а-яёіңғүұқөһә]*)/gi,
+  },
+  {
     id: "urgency",
     label: "Давление срочностью",
     explanation:
@@ -55,7 +133,7 @@ const PATTERNS: ScamPattern[] = [
     severity: "high",
     weight: 15,
     regex:
-      /(срочно|немедленно|прямо сейчас|в течение\s+\d+\s+минут|не откладыва[а-яё]*|сегодня же|последн[а-яё]*\s+(?:день|шанс)|только сейчас|время на исходе)/gi,
+      /(срочно|немедленно|прямо сейчас|в течение\s+\d+\s+минут|не откладыва[а-яё]*|сегодня же|последн[а-яё]*\s+(?:день|шанс)|только сейчас|время на исходе|дереу|жедел|қазір\s+ғана|бүгін\s+болмаса)/gi,
   },
   {
     id: "safe_account",
@@ -68,6 +146,16 @@ const PATTERNS: ScamPattern[] = [
       /(резервн[а-яё]*\s+(?:счет|счёт)|безопасн[а-яё]*\s+(?:счет|счёт)|защищенн[а-яё]*\s+(?:счет|счёт)|зеркальн[а-яё]*\s+кредит[а-яё]*|аннулирова[а-яё]*\s+заявк[а-яё]*)/gi,
   },
   {
+    id: "kz_safe_account",
+    label: "«Қауіпсіз шот» аңызы",
+    explanation:
+      "Банктің де, Ұлттық банктің де «қауіпсіз» немесе «резервтік» шоты жоқ. Ақшаны осылай шығарады.",
+    severity: "critical",
+    weight: 30,
+    regex:
+      /(қауіпсіз\s+шот[а-яёіңғүұқөһә]*|сақтандырылған\s+шот[а-яёіңғүұқөһә]*|резервтік\s+шот[а-яёіңғүұқөһә]*|айналық\s+несие[а-яёіңғүұқөһә]*)/gi,
+  },
+  {
     id: "secrecy",
     label: "Требование секретности",
     explanation:
@@ -75,7 +163,7 @@ const PATTERNS: ScamPattern[] = [
     severity: "high",
     weight: 15,
     regex:
-      /(никому не сообщай[а-яё]*|не рассказывай[а-яё]*|секретн[а-яё]*\s+проверк[а-яё]*|конфиденциальн[а-яё]*|не кладите трубку|никому не говорите)/gi,
+      /(никому не сообщай[а-яё]*|не рассказывай[а-яё]*|секретн[а-яё]*\s+проверк[а-яё]*|конфиденциальн[а-яё]*|не кладите трубку|никому не говорите|ешкімге\s+айтпа[а-яёіңғүұқөһә]*)/gi,
   },
   {
     id: "otp",
@@ -86,6 +174,16 @@ const PATTERNS: ScamPattern[] = [
     weight: 30,
     regex:
       /(код[а-яё]*\s+(?:из\s+)?(?:sms|смс)|4-значн[а-яё]*\s+код[а-яё]*|код[а-яё]*\s+от\s+1414|\b1414\b|эцп|одноразов[а-яё]*\s+парол[а-яё]*|код[а-яё]*\s+подтверждени[а-яё]*)/gi,
+  },
+  {
+    id: "kz_otp",
+    label: "1414 коды / SMS-код",
+    explanation:
+      "1414 коды, SMS растау коды және ЭЦҚ — ақшаңыздың кілті. Банк қызметкері оларды ешқашан сұрамайды.",
+    severity: "critical",
+    weight: 30,
+    regex:
+      /(1414\s+код[а-яёіңғүұқөһә]*|sms\s+код[а-яёіңғүұқөһә]*|растау\s+код[а-яёіңғүұқөһә]*|құпия\s+код[а-яёіңғүұқөһә]*|эцқ)/gi,
   },
   {
     id: "code_request",
@@ -115,7 +213,7 @@ const PATTERNS: ScamPattern[] = [
     severity: "high",
     weight: 15,
     regex:
-      /(https?:\/\/\S+|перейд[а-яё]*\s+по\s+ссылк[а-яё]*|ссылк[а-яё]*\s+для|по\s+ссылке\s+ниже)/gi,
+      /(https?:\/\/\S+|перейд[а-яё]*\s+по\s+ссылк[а-яё]*|ссылк[а-яё]*\s+для|по\s+ссылке\s+ниже|сілтеме[а-яёіңғүұқөһә]*\s+өт[а-яёіңғүұқөһә]*)/gi,
   },
   {
     id: "card_data",
@@ -128,6 +226,16 @@ const PATTERNS: ScamPattern[] = [
       /(cvv|cvc|номер[а-яё]*\s+карты|срок[а-яё]*\s+действия|привязк[а-яё]*\s+карты|данн[а-яё]*\s+карты|реквизит[а-яё]*\s+карты)/gi,
   },
   {
+    id: "dropper",
+    label: "Реквизиты дроппера",
+    explanation:
+      "Карта «получателя» принадлежит подставному лицу (дропперу). После перевода деньги снимают за минуты.",
+    severity: "critical",
+    weight: 20,
+    regex:
+      /(дроппер[а-яё]*|дроп[а-яё]*\s+карт[а-яё]*|карт[а-яё]*\s+получател[а-яё]*|получател[а-яё]*\s+карт[а-яё]*|қабылдаушы\s+карт[а-яёіңғүұқөһә]*)/gi,
+  },
+  {
     id: "delivery",
     label: "Легенда доставки",
     explanation:
@@ -135,7 +243,7 @@ const PATTERNS: ScamPattern[] = [
     severity: "medium",
     weight: 15,
     regex:
-      /(посылк[а-яё]*|курьер[а-яё]*|казпочт[а-яё]*|доставк[а-яё]*|переадрес[а-яё]*|заказн[а-яё]*)/gi,
+      /(посылк[а-яё]*|курьер[а-яё]*|казпочт[а-яё]*|доставк[а-яё]*|переадрес[а-яё]*|заказн[а-яё]*|қазпошта|жеткізу[а-яёіңғүұқөһә]*|сәлемдеме[а-яёіңғүұқөһә]*)/gi,
   },
   {
     id: "payout",
@@ -145,7 +253,7 @@ const PATTERNS: ScamPattern[] = [
     severity: "medium",
     weight: 15,
     regex:
-      /(социальн[а-яё]*\s+выплат[а-яё]*|компенсац[а-яё]*|государственн[а-яё]*\s+программ[а-яё]*|пособи[а-яё]*|выплат[а-яё]*\s+от\s+государства)/gi,
+      /(социальн[а-яё]*\s+выплат[а-яё]*|компенсац[а-яё]*|государственн[а-яё]*\s+программ[а-яё]*|пособи[а-яё]*|выплат[а-яё]*\s+от\s+государства|мемлекеттік\s+жәрдемақы[а-яёіңғүұқөһә]*)/gi,
   },
   {
     id: "payment",
@@ -155,7 +263,7 @@ const PATTERNS: ScamPattern[] = [
     severity: "medium",
     weight: 15,
     regex:
-      /(пошлин[а-яё]*|штраф[а-яё]*|оплат[а-яё]*\s+(?:доставки|посылки)|3d-secure|3-d\s+secure)/gi,
+      /(пошлин[а-яё]*|штраф[а-яё]*|оплат[а-яё]*\s+(?:доставки|посылки)|3d-secure|3-d\s+secure|төлем\s+жаса[а-яёіңғүұқөһә]*)/gi,
   },
   {
     id: "threat",
@@ -165,7 +273,7 @@ const PATTERNS: ScamPattern[] = [
     severity: "high",
     weight: 20,
     regex:
-      /(уголовн[а-яё]*\s+дел[а-яё]*|арест[а-яё]*|блокировк[а-яё]*\s+(?:счет|счёт)[а-яё]*|заморозк[а-яё]*\s+(?:счет|счёт)[а-яё]*|потеряете\s+деньги)/gi,
+      /(уголовн[а-яё]*\s+дел[а-яё]*|арест[а-яё]*|блокировк[а-яё]*\s+(?:счет|счёт)[а-яё]*|заморозк[а-яё]*\s+(?:счет|счёт)[а-яё]*|потеряете\s+деньги|қылмыстық\s+іс[а-яёіңғүұқөһә]*)/gi,
   },
   {
     id: "refund",
@@ -175,7 +283,7 @@ const PATTERNS: ScamPattern[] = [
     severity: "medium",
     weight: 10,
     regex:
-      /(возврат[а-яё]*\s+(?:средств|денег|посылки)|оформлени[а-яё]*\s+возврат[а-яё]*)/gi,
+      /(возврат[а-яё]*\s+(?:средств|денег|посылки)|оформлени[а-яё]*\s+возврат[а-яё]*|қайтару[а-яёіңғүұқөһә]*)/gi,
   },
   {
     id: "data_confirmation",
@@ -185,16 +293,31 @@ const PATTERNS: ScamPattern[] = [
     severity: "high",
     weight: 15,
     regex:
-      /(подтверд[а-яё]*\s+(?:данные|личность|карту)|авторизу[а-яё]*|войдите[а-яё]*\s+в\s+личный\s+кабинет)/gi,
+      /(подтверд[а-яё]*\s+(?:данные|личность|карту)|авторизу[а-яё]*|войдите[а-яё]*\s+в\s+личный\s+кабинет|растаңыз)/gi,
+  },
+  {
+    id: "credit",
+    label: "Оформление кредита",
+    explanation:
+      "«Зеркальный» или «срочный» кредит на ваше имя — повод выманить ЭЦП и отправить деньги на чужой счет.",
+    severity: "high",
+    weight: 20,
+    regex:
+      /(несие\s+рәсімде[а-яёіңғүұқөһә]*|айналық\s+несие|жедел\s+несие|кредит[а-яё]*\s+на\s+ваше\s+имя|оформля[а-яё]*\s+кредит[а-яё]*)/gi,
   },
 ];
 
 const CRITICAL_ACCOUNT_SCAM = new Set([
   "authority",
+  "kz_authority",
   "safe_account",
+  "kz_safe_account",
   "otp",
+  "kz_otp",
   "code_request",
   "threat",
+  "credit",
+  "dropper",
 ]);
 
 function clamp(value: number, min: number, max: number): number {
@@ -242,15 +365,16 @@ function pickCategory(activeIds: Set<string>, score: number): string {
   if (score < 30) return "Признаков мошенничества не найдено";
 
   if (
-    activeIds.has("authority") &&
+    (activeIds.has("authority") || activeIds.has("kz_authority")) &&
     (activeIds.has("safe_account") ||
+      activeIds.has("kz_safe_account") ||
       activeIds.has("secrecy") ||
       activeIds.has("threat"))
   ) {
     return "Ложный сотрудник Нацбанка или спецслужб";
   }
 
-  if (activeIds.has("delivery") && activeIds.has("otp")) {
+  if (activeIds.has("delivery") && (activeIds.has("otp") || activeIds.has("kz_otp"))) {
     return "Фишинг доставки и кража OTP";
   }
 
@@ -266,7 +390,15 @@ function pickCategory(activeIds: Set<string>, score: number): string {
     return "Фишинг и кража данных карты";
   }
 
-  if (activeIds.has("otp") || activeIds.has("code_request")) {
+  if (activeIds.has("credit")) {
+    return "Ложное оформление кредита";
+  }
+
+  if (activeIds.has("dropper")) {
+    return "Перевод на карту дроппера";
+  }
+
+  if (activeIds.has("otp") || activeIds.has("kz_otp") || activeIds.has("code_request")) {
     return "Кража одноразовых кодов";
   }
 
@@ -289,13 +421,18 @@ function buildAdvice(
     );
   }
 
-  if (activeIds.has("otp") || activeIds.has("code_request")) {
+  if (activeIds.has("otp") || activeIds.has("kz_otp") || activeIds.has("code_request")) {
     advice.push(
       "Никому не сообщайте коды из SMS, push-подтверждения и ЭЦП. Сотрудник банка не спрашивает их никогда.",
     );
   }
 
-  if (activeIds.has("safe_account") || activeIds.has("authority")) {
+  if (
+    activeIds.has("safe_account") ||
+    activeIds.has("kz_safe_account") ||
+    activeIds.has("authority") ||
+    activeIds.has("kz_authority")
+  ) {
     advice.push(
       "У Нацбанка и BCC нет «безопасных» или «резервных» счетов для перевода денег.",
     );
@@ -320,8 +457,18 @@ function buildAdvice(
   }
 
   if (activeIds.has("link")) {
+    advice.push("Не открывайте ссылку. Адрес банка вводите вручную: bcc.kz.");
+  }
+
+  if (activeIds.has("credit")) {
     advice.push(
-      "Не открывайте ссылку. Адрес банка вводите вручную: bcc.kz.",
+      "Проверьте кредитную историю в приложении банка. Оформление кредита никогда не требует перевода на чужой счет.",
+    );
+  }
+
+  if (activeIds.has("dropper")) {
+    advice.push(
+      "Не переводите деньги на карту, присланную в мессенджере. Это реквизиты дроппера.",
     );
   }
 
@@ -345,7 +492,8 @@ function buildAdvice(
 
 export function analyzeScamText(text: string): ScamAnalysis {
   const normalized = text.replace(/\r\n/g, "\n").slice(0, 8000);
-  const triggers = collectTriggers(normalized);
+  const scrub = scrubPii(normalized);
+  const triggers = collectTriggers(scrub.maskedText);
   const activeIds = new Set(triggers.map((trigger) => trigger.patternId));
   const patternWeights = new Map<string, number>();
 
@@ -373,9 +521,7 @@ export function analyzeScamText(text: string): ScamAnalysis {
   let summary: string;
 
   if (score >= 75) {
-    category = hasCritical
-      ? pickCategory(activeIds, score)
-      : category;
+    category = hasCritical ? pickCategory(activeIds, score) : category;
     verdict = "Критический риск: сообщение написано по мошенническому сценарию";
     summary = `Найдено ${triggers.length} маркеров социальной инженерии. Сценарий давит на срочность и пытается получить деньги или секретные данные.`;
   } else if (score >= 45) {
@@ -391,13 +537,25 @@ export function analyzeScamText(text: string): ScamAnalysis {
       "Матрица мошенничества РК не нашла давления срочностью, запросов OTP или требований перевода на «безопасный счет».";
   }
 
+  const advice = buildAdvice(activeIds, score, triggers.length);
+
+  if (scrub.findings.length > 0) {
+    advice.unshift(
+      `До анализа обезличено на устройстве: ${scrub.findings
+        .map((finding) => `${finding.label} × ${finding.count}`)
+        .join(", ")}. Сырые данные не отправлялись в ИИ.`,
+    );
+  }
+
   return {
     score,
     category,
     summary,
     verdict,
-    advice: buildAdvice(activeIds, score, triggers.length),
+    advice: advice.slice(0, 6),
     triggers,
+    pii: scrub.findings,
+    maskedText: scrub.maskedText,
     aiAssisted: false,
     engine: "deterministic",
   };

@@ -6,6 +6,16 @@ export const metadata: Metadata = {
   description:
     "Единая экосистема активной киберзащиты клиента Банка ЦентрКредит: SafeCall Shield, TrustLens, GuardPay и AI Scam-Scanner.",
   applicationName: "BCC Shield 360",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "BCC Shield 360",
+    statusBarStyle: "black-translucent",
+  },
+  other: {
+    // Next still emits the legacy apple-* tag; this satisfies the modern spec.
+    "mobile-web-app-capable": "yes",
+  },
   authors: [{ name: "BCC Bank" }],
   keywords: [
     "BCC Bank",

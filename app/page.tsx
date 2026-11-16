@@ -16,24 +16,27 @@ import {
   BadgeCheck,
   Ban,
   BatteryFull,
+  Building2,
   Check,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  ClipboardCheck,
   ClipboardPaste,
   Clock3,
   Copy,
   CreditCard,
   FileCheck2,
+  FileJson,
   Fingerprint,
-  Flame,
   Gauge,
-  Globe,
   KeyRound,
   Landmark,
   Link2,
   Loader2,
   Lock,
   MessageSquareWarning,
-  PhoneIncoming,
+  Mic,
   PhoneOff,
   Radar,
   RotateCcw,
@@ -45,7 +48,6 @@ import {
   Signal,
   Siren,
   Timer,
-  UserRound,
   Users,
   Wifi,
   X,
@@ -70,6 +72,7 @@ type Decision = "ALLOW" | "COOL_DOWN" | "GUARDIAN_APPROVAL" | "BLOCK";
 type TelemetryLevel = "info" | "success" | "warn" | "danger";
 type HoldStatus = "pending" | "approved" | "blocked";
 type PhishStatus = "safe" | "suspicious" | "phishing";
+type Lang = "ru" | "kk";
 
 interface Receipt {
   id: string;
@@ -151,12 +154,33 @@ interface PendingTransfer {
   amount: number;
 }
 
+interface NbrkReport {
+  schema: "NBRK-ANTIFRAUD-EXCHANGE-V2";
+  reportId: string;
+  timestamp: string;
+  bankBic: "KCJBKZKX";
+  channel: "MOBILE_BANKING";
+  suspectPan: string;
+  victimProfile: {
+    fullName: string;
+    age: number;
+    guardPayProtected: boolean;
+  };
+  amountKzt: number;
+  riskScore: number;
+  synergyBoostTriggered: boolean;
+  telemetryFlags: string[];
+  incidentType: string;
+  resolution: "PREVENTED_BY_BCC_SHIELD_360";
+}
+
 type ModalState =
   | { kind: "none" }
   | { kind: "success"; receipt: SignedReceipt }
   | { kind: "cooldown"; pending: PendingTransfer }
   | { kind: "hold"; hold: HoldRequest }
-  | { kind: "block"; triggers: RiskWeight[]; score: number };
+  | { kind: "block"; triggers: RiskWeight[]; score: number }
+  | { kind: "report"; report: NbrkReport };
 
 interface PhishAnalysis {
   url: string;
@@ -189,6 +213,282 @@ const DROPPER_CARD = "4400 4301 9928 7741";
 const OWN_CARD = "4400 43** **** 8821";
 const INITIAL_BALANCE = 1_450_000;
 const INITIAL_FAMILY_BALANCE = 620_000;
+
+const STORAGE_KEY = "bcc_shield_360_state_v2";
+
+/* -------------------------------------------------------------------------- */
+/*  Bilingual dictionary (RU / KK)                                            */
+/* -------------------------------------------------------------------------- */
+
+const RU_DICT = {
+  navTransfer: "Перевод",
+  navTrustlens: "TrustLens",
+  navGuardpay: "GuardPay",
+  navScanner: "Сканер",
+  screenTransferTitle: "Перевод",
+  screenTransferSubtitle: "SafeCall Shield проверяет каждую операцию",
+  screenTrustlensTitle: "TrustLens",
+  screenTrustlensSubtitle: "Подлинность звонка и криптопечать чека",
+  screenGuardpayTitle: "GuardPay",
+  screenGuardpaySubtitle: "Семейный мультисиг и антифишинг",
+  screenScannerTitle: "AI Scam-Scanner",
+  screenScannerSubtitle: "Разбор текста на приемы социальной инженерии",
+  protectionOn: "Защита включена",
+  bankName: "Банк ЦентрКредит",
+  riskAllow: "Безопасно",
+  riskCoolDown: "Период охлаждения",
+  riskGuardian: "Одобрение Хранителя",
+  riskBlock: "Блокировка",
+  balanceLabel: "Доступный баланс",
+  ownerAccount: "Владелец счета",
+  protectedProfile: "Защищаемый профиль: Апашка",
+  recipientLabel: "Получатель",
+  trustedContact: "Доверенный контакт",
+  trustedHint: "Сын Алихан",
+  unknownRecipient: "Неизвестный получатель",
+  dropperCard: "Карта дроппера",
+  cardLabel: "Карта или телефон получателя",
+  pasteWhatsApp: "📋 Вставить карту из WhatsApp",
+  amountLabel: "Сумма перевода",
+  riskPreview: "Предрасчет риска",
+  sendButton: "Перевести",
+  recentOps: "Последние операции",
+  noOps: "Проведенных операций пока нет",
+  bannerScam:
+    "⚠️ Обнаружен активный телефонный вызов с неизвестного номера! Включен усиленный контроль SafeCall",
+  bannerOfficial: "🛡️ Верифицированный звонок BCC. Код:",
+  liveTitle: "🎙️ Live Audio-to-Text (Потоковый детектор речи)",
+  liveHint: "Распознавание речи на устройстве · без записи в облако",
+  liveScamLabel: "Неизвестный номер · SIP-спуфинг",
+  liveOfficialLabel: "Официальный канал BCC",
+  radarTitle: "Радар телефонной линии",
+  radarSpoof: "SIP-СПУФИНГ",
+  radarVerified: "VERIFIED",
+  radarMonitoring: "МОНИТОРИНГ",
+  radarScamText:
+    "🚨 ТРЕВОГА: Идет вызов, но сервер BCC НЕ подтверждает звонок! Это подмена номера (SIP-спуфинг). Немедленно положите трубку!",
+  radarVerifiedText:
+    "✅ ВЕРИФИЦИРОВАНО: С вами говорит Айгерим Садыкова (Отдел мониторинга BCC)",
+  radarIdleText:
+    "Линия чиста: активных звонков от BCC нет. SIP-мониторинг работает в фоне.",
+  sessionWord: "Одноразовое кодовое слово сессии",
+  newWord: "Новое слово",
+  sessionHint:
+    "Спросите оператора: «Назовите кодовое слово сессии». Если слово не совпало — это мошенник.",
+  receiptTitle: "Крипто-печать чека",
+  receiptSubtitle: "HMAC-SHA256 · Web Crypto API",
+  amountOnReceipt: "Сумма по чеку",
+  receiptOperation: "Операция",
+  receiptDate: "Дата и время",
+  receiptSender: "Отправитель",
+  receiptRecipient: "Получатель",
+  signatureLabel: "Цифровая подпись",
+  tamperOn: "🛠 Подделать сумму в чеке (+00 в Фотошопе)",
+  tamperOff: "Вернуть оригинальную сумму чека",
+  verifyCta: "Запустить крипто-проверку чека",
+  verifyRunning: "Пересчитываем HMAC-SHA256…",
+  passportOpen: "🔐 Открыть крипто-паспорт HMAC-SHA256",
+  passportClose: "Свернуть крипто-паспорт",
+  passportCanonical: "Каноническая строка сериализации",
+  passportAlgorithm: "Статус алгоритма",
+  passportStored: "Оригинальная подпись банка (в QR)",
+  passportActual: "Фактический хеш документа сейчас",
+  passportMismatch:
+    "❌ НЕСОВПАДЕНИЕ ХЕШ-СУММ (ЛАВИННЫЙ ЭФФЕКТ SHA-256): Документ сфальсифицирован после выпуска!",
+  passportMatch: "✅ Хеши совпадают: чек подлинный",
+  guardCircle: "Круг защиты",
+  familyMultisig: "Семейный мультисиг",
+  savedLabel: "Спасено от мошенников",
+  guardianTab: "Хранитель (Марат)",
+  protectedTab: "Апашка, 68 лет",
+  requestsTitle: "Запросы на подтверждение",
+  noHolds: "Замороженных переводов нет",
+  approveHold: "✅ Одобрить и провести",
+  blockHold: "🛑 Заблокировать перевод (Спасти средства)",
+  guardianOnly: "Одобрение доступно Хранителю семьи",
+  holdPending: "НА ПОДТВЕРЖДЕНИИ",
+  holdApproved: "ПРОВЕДЕНО",
+  holdBlocked: "ЗАБЛОКИРОВАНО",
+  antiphishTitle: "Антифишинг-песочница",
+  antiphishHint: "Проверка URL перед оплатой",
+  sandboxVerdict: "Вердикт песочницы",
+  scannerInputTitle: "Текст сообщения или звонка",
+  scannerInputHint: "SMS, WhatsApp, Telegram или расшифровка разговора",
+  analyzeButton: "Анализировать через AI Scam-Scanner",
+  analyzingButton: "Анализируем текст…",
+  piiBadge:
+    "🛡️ Закон РК о ПДн: ИИН и номера карт автоматически обезличены на устройстве до отправки в ИИ",
+  maskedTextLabel: "Обезличенный текст, который ушел в анализ",
+  probabilityLabel: "Вероятность мошенничества",
+  triggersLabel: "Найденные приемы",
+  activateProtection:
+    "⚡ Активировать повышенную защиту в Risk Engine (+25 к порогу безопасности)",
+  protectionActive: "Повышенная защита активна (+25)",
+  reportCta: "🏛️ Сформировать рапорт в Антифрод-центр НБ РК",
+  reportTitle: "Рапорт в Антифрод-центр НБ РК",
+  reportSent: "Отправлено в шлюз НБ РК",
+  copyJson: "📋 Скопировать JSON рапорта",
+  copied: "Скопировано",
+  close: "Закрыть",
+  juryTitle: "Jury Control",
+  jurySubtitle: "Симуляция атак и телеметрия в реальном времени",
+  attackScenarios: "Сценарии атаки",
+  stormTitle: "Сценарий «Идеальный шторм»",
+  stormHint: "Звонок мошенника + буфер + 450 000 ₸ в один клик",
+  resetTriggers: "Сбросить все триггеры",
+  resetDemo: "🔄 Сбросить демо к исходному состоянию",
+  langRu: "RU",
+  langKk: "ҚАЗ",
+} as const;
+
+type DictKey = keyof typeof RU_DICT;
+
+const KK_DICT: Record<DictKey, string> = {
+  navTransfer: "Аударым",
+  navTrustlens: "TrustLens",
+  navGuardpay: "GuardPay",
+  navScanner: "Сканер",
+  screenTransferTitle: "Аударым",
+  screenTransferSubtitle: "SafeCall Shield әр операцияны тексереді",
+  screenTrustlensTitle: "TrustLens",
+  screenTrustlensSubtitle: "Қоңыраудың түпнұсқалығы және чектің криптомөрі",
+  screenGuardpayTitle: "GuardPay",
+  screenGuardpaySubtitle: "Отбасылық мультисиг және антифишинг",
+  screenScannerTitle: "AI Сканер",
+  screenScannerSubtitle: "Мәтінді әлеуметтік инженерия әдістеріне талдау",
+  protectionOn: "Қорғаныс қосылған",
+  bankName: "Банк ЦентрКредит",
+  riskAllow: "Қауіпсіз",
+  riskCoolDown: "Салқындату кезеңі",
+  riskGuardian: "Қорғаушы растауы",
+  riskBlock: "Бұғатталды",
+  balanceLabel: "Қолжетімді баланс",
+  ownerAccount: "Шот иесі",
+  protectedProfile: "Қорғалатын профиль: Апашка",
+  recipientLabel: "Алушы",
+  trustedContact: "Сенімді контакт",
+  trustedHint: "Ұлы Алихан",
+  unknownRecipient: "Белгісіз алушы",
+  dropperCard: "Дроппер картасы",
+  cardLabel: "Алушының картасы немесе телефоны",
+  pasteWhatsApp: "📋 Картаны WhatsApp-тан қою",
+  amountLabel: "Аударым сомасы",
+  riskPreview: "Тәуекелді алдын ала есептеу",
+  sendButton: "Аудару",
+  recentOps: "Соңғы операциялар",
+  noOps: "Әзірге операция жоқ",
+  bannerScam:
+    "⚠️ Белгісіз нөмірден белсенді қоңырау анықталды! SafeCall күшейтілген бақылауы қосылды",
+  bannerOfficial: "🛡️ BCC расталған қоңырауы. Код:",
+  liveTitle: "🎙️ Live Audio-to-Text (Сөйлеуді ағындық анықтау)",
+  liveHint: "Сөйлеуді құрылғыда тану · бұлтқа жазбайды",
+  liveScamLabel: "Белгісіз нөмір · SIP-спуфинг",
+  liveOfficialLabel: "BCC ресми арнасы",
+  radarTitle: "Телефон желісінің радары",
+  radarSpoof: "SIP-СПУФИНГ",
+  radarVerified: "VERIFIED",
+  radarMonitoring: "МОНИТОРИНГ",
+  radarScamText:
+    "🚨 ДАБЫЛ: қоңырау жүріп жатыр, бірақ BCC сервері оны растамайды! Бұл нөмірді ауыстыру (SIP-спуфинг). Трубканы дереу қойыңыз!",
+  radarVerifiedText:
+    "✅ РАСТАЛДЫ: сізбен Айгерим Садықова (BCC мониторинг бөлімі) сөйлесіп отыр",
+  radarIdleText:
+    "Желі таза: BCC-тен белсенді қоңырау жоқ. SIP-мониторинг фонда жұмыс істейді.",
+  sessionWord: "Сессияның бір реттік кодтық сөзі",
+  newWord: "Жаңа сөз",
+  sessionHint:
+    "Оператордан «Сессияның кодтық сөзін атаңыз» деп сұраңыз. Сөз сәйкес келмесе — бұл алаяқ.",
+  receiptTitle: "Чектің криптомөрі",
+  receiptSubtitle: "HMAC-SHA256 · Web Crypto API",
+  amountOnReceipt: "Чектегі сома",
+  receiptOperation: "Операция",
+  receiptDate: "Күні мен уақыты",
+  receiptSender: "Жіберуші",
+  receiptRecipient: "Алушы",
+  signatureLabel: "Цифрлық қолтаңба",
+  tamperOn: "🛠 Чектегі соманы бұрмалау (+00 Photoshop-та)",
+  tamperOff: "Чектің түпнұсқа сомасын қайтару",
+  verifyCta: "Чекті крипто-тексеруді бастау",
+  verifyRunning: "HMAC-SHA256 қайта есептелуде…",
+  passportOpen: "🔐 HMAC-SHA256 крипто-паспортын ашу",
+  passportClose: "Крипто-паспортты жабу",
+  passportCanonical: "Сериализацияның канондық жолы",
+  passportAlgorithm: "Алгоритм мәртебесі",
+  passportStored: "Банктің түпнұсқа қолтаңбасы (QR-да)",
+  passportActual: "Құжаттың қазіргі нақты хеші",
+  passportMismatch:
+    "❌ ХЕШ СУММАЛАРЫ СӘЙКЕС ЕМЕС (SHA-256 ЛАВИНА ӘСЕРІ): Құжат шығарылғаннан кейін бұрмаланған!",
+  passportMatch: "✅ Хештер сәйкес: чек түпнұсқа",
+  guardCircle: "Қорғаныс шеңбері",
+  familyMultisig: "Отбасылық мультисиг",
+  savedLabel: "Алаяқтардан сақталды",
+  guardianTab: "Қорғаушы (Марат)",
+  protectedTab: "Апашка, 68 жаста",
+  requestsTitle: "Растау сұраныстары",
+  noHolds: "Мұздатылған аударым жоқ",
+  approveHold: "✅ Мақұлдап, өткізу",
+  blockHold: "🛑 Аударымды бұғаттау (Ақшаны сақтау)",
+  guardianOnly: "Мақұлдау отбасы Қорғаушысына қолжетімді",
+  holdPending: "РАСТАУДА",
+  holdApproved: "ӨТКІЗІЛДІ",
+  holdBlocked: "БҰҒАТТАЛДЫ",
+  antiphishTitle: "Антифишинг құмсалғышы",
+  antiphishHint: "Төлем алдында URL тексеру",
+  sandboxVerdict: "Құмсалғыш үкімі",
+  scannerInputTitle: "Хабарлама немесе қоңырау мәтіні",
+  scannerInputHint: "SMS, WhatsApp, Telegram немесе сөйлесу транскрипті",
+  analyzeButton: "AI Сканер арқылы талдау",
+  analyzingButton: "Мәтін талдануда…",
+  piiBadge:
+    "🛡️ ҚР ЖД туралы заң: ЖСН мен карта нөмірлері ИИ-ға жіберілмей тұрып құрылғыда автоматты түрде жасырылады",
+  maskedTextLabel: "Талдауға кеткен жасырылған мәтін",
+  probabilityLabel: "Алаяқтық ықтималдығы",
+  triggersLabel: "Табылған әдістер",
+  activateProtection:
+    "⚡ Risk Engine-де күшейтілген қорғанысты қосу (+25)",
+  protectionActive: "Күшейтілген қорғаныс белсенді (+25)",
+  reportCta: "🏛️ ҚР ҰБ Антифрод орталығына есеп жасау",
+  reportTitle: "ҚР ҰБ Антифрод орталығына есеп",
+  reportSent: "ҚР ҰБ шлюзіне жіберілді",
+  copyJson: "📋 Есептің JSON көшіру",
+  copied: "Көшірілді",
+  close: "Жабу",
+  juryTitle: "Jury Control",
+  jurySubtitle: "Шабуылдарды симуляциялау және нақты уақыт телеметриясы",
+  attackScenarios: "Шабуыл сценарийлері",
+  stormTitle: "«Идеалды дауыл» сценарийі",
+  stormHint: "Алаяқ қоңырауы + буфер + 450 000 ₸ бір басумен",
+  resetTriggers: "Барлық триггерлерді тазарту",
+  resetDemo: "🔄 Демоны бастапқы күйге қайтару",
+  langRu: "RU",
+  langKk: "ҚАЗ",
+};
+
+const DICT: Record<Lang, Record<DictKey, string>> = {
+  ru: RU_DICT,
+  kk: KK_DICT,
+};
+
+const DECISION_KEY: Record<Decision, DictKey> = {
+  ALLOW: "riskAllow",
+  COOL_DOWN: "riskCoolDown",
+  GUARDIAN_APPROVAL: "riskGuardian",
+  BLOCK: "riskBlock",
+};
+
+const SCREEN_TITLE_KEY: Record<Tab, DictKey> = {
+  transfer: "screenTransferTitle",
+  trustlens: "screenTrustlensTitle",
+  guardpay: "screenGuardpayTitle",
+  scam: "screenScannerTitle",
+};
+
+const SCREEN_SUBTITLE_KEY: Record<Tab, DictKey> = {
+  transfer: "screenTransferSubtitle",
+  trustlens: "screenTrustlensSubtitle",
+  guardpay: "screenGuardpaySubtitle",
+  scam: "screenScannerSubtitle",
+};
 
 const COOLDOWN_CHECKS = [
   "Мне НЕ звонят из Нацбанка, КНБ, полиции или курьерской службы",
@@ -272,6 +572,13 @@ const SCAM_PRESETS = [
     short: "Обычная просьба друга",
     text:
       "Марат, привет! Скинь, пожалуйста, 5 000 тенге за вчерашний кофе и обед, когда будешь свободен. Спасибо!",
+  },
+  {
+    id: "pii",
+    label: "🪪 Тест ПДн: ИИН и карта в тексте",
+    short: "Проверка обезличивания до отправки в ИИ",
+    text:
+      "Здравствуйте! Для возврата средств подтвердите ИИН 990101300123 и номер карты 4400 4301 9928 7741. Код из SMS сообщите оператору срочно.",
   },
 ];
 
@@ -379,25 +686,6 @@ const DECISION_META: Record<
   },
 };
 
-const SCREEN_META: Record<Tab, { title: string; subtitle: string }> = {
-  transfer: {
-    title: "Перевод",
-    subtitle: "SafeCall Shield проверяет каждую операцию",
-  },
-  trustlens: {
-    title: "TrustLens",
-    subtitle: "Подлинность звонка и криптопечать чека",
-  },
-  guardpay: {
-    title: "GuardPay",
-    subtitle: "Семейный мультисиг и антифишинг",
-  },
-  scam: {
-    title: "AI Scam-Scanner",
-    subtitle: "Разбор текста на приемы социальной инженерии",
-  },
-};
-
 const SEVERITY_CLASS: Record<ScamSeverity, string> = {
   critical: "scam-mark scam-mark-critical",
   high: "scam-mark scam-mark-high",
@@ -428,6 +716,14 @@ function formatCard(value: string): string {
     .replace(/\D/g, "")
     .slice(0, 16)
     .replace(/(\d{4})(?=\d)/g, "$1 ");
+}
+
+function maskPan(value: string): string {
+  const digits = value.replace(/\D/g, "");
+  if (digits.length >= 10) {
+    return `${digits.slice(0, 4)} •••• •••• ${digits.slice(-4)}`;
+  }
+  return digits.length >= 4 ? `•••• •••• •••• ${digits.slice(-4)}` : "НЕ ОПРЕДЕЛЕНА";
 }
 
 function pad2(value: number): string {
@@ -478,6 +774,101 @@ function formatDateTime(iso: string): string {
   return `${date.getDate()} ${MONTHS_SHORT[date.getMonth()]}, ${pad2(
     date.getHours(),
   )}:${pad2(date.getMinutes())}`;
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Persistence                                                               */
+/* -------------------------------------------------------------------------- */
+
+interface PersistedShieldState {
+  balance: number;
+  familyBalance: number;
+  transfers: TransferRecord[];
+  holds: HoldRequest[];
+  savedTotal: number;
+  lang: Lang;
+}
+
+function isNonNegativeNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0;
+}
+
+function isTransferRecord(value: unknown): value is TransferRecord {
+  if (typeof value !== "object" || value === null) return false;
+  const record = value as Partial<TransferRecord>;
+  return (
+    typeof record.id === "string" &&
+    typeof record.recipient === "string" &&
+    isNonNegativeNumber(record.amount) &&
+    typeof record.timeLabel === "string" &&
+    typeof record.status === "string" &&
+    (record.signature === undefined || typeof record.signature === "string")
+  );
+}
+
+function isHoldRequest(value: unknown): value is HoldRequest {
+  if (typeof value !== "object" || value === null) return false;
+  const hold = value as Partial<HoldRequest>;
+  return (
+    typeof hold.id === "string" &&
+    typeof hold.from === "string" &&
+    typeof hold.fromAlias === "string" &&
+    typeof hold.to === "string" &&
+    isNonNegativeNumber(hold.amount) &&
+    typeof hold.reason === "string" &&
+    typeof hold.createdLabel === "string" &&
+    (hold.status === "pending" ||
+      hold.status === "approved" ||
+      hold.status === "blocked") &&
+    (hold.source === "self" || hold.source === "family") &&
+    (hold.signature === undefined || typeof hold.signature === "string")
+  );
+}
+
+/**
+ * Reads the demo snapshot only on the client. Any malformed or partial payload
+ * falls back to the seeded state instead of crashing hydration.
+ */
+function loadPersistedState(): PersistedShieldState | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw) as Partial<PersistedShieldState>;
+    if (
+      !isNonNegativeNumber(parsed.balance) ||
+      !Array.isArray(parsed.transfers) ||
+      !Array.isArray(parsed.holds)
+    ) {
+      return null;
+    }
+
+    return {
+      balance: parsed.balance,
+      familyBalance: isNonNegativeNumber(parsed.familyBalance)
+        ? parsed.familyBalance
+        : INITIAL_FAMILY_BALANCE,
+      transfers: parsed.transfers.filter(isTransferRecord).slice(0, 8),
+      holds: parsed.holds.filter(isHoldRequest),
+      savedTotal: isNonNegativeNumber(parsed.savedTotal)
+        ? parsed.savedTotal
+        : 0,
+      lang: parsed.lang === "kk" ? "kk" : "ru",
+    };
+  } catch {
+    return null;
+  }
+}
+
+function savePersistedState(state: PersistedShieldState): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // Private browsing or a full quota must never break the demo.
+  }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -553,7 +944,7 @@ function computeRisk(factors: RiskFactors): RiskResult {
 let cachedHmacKey: CryptoKey | null = null;
 
 function buildCanonical(receipt: Receipt): string {
-  return `${receipt.id}|${receipt.timestamp}|${receipt.sender}|${receipt.recipient}|${receipt.amount}|BCC`;
+  return `${receipt.id}|${receipt.timestamp}|${receipt.sender}|${receipt.recipient}|${receipt.amount}|BCC-2026`;
 }
 
 async function getHmacKey(): Promise<CryptoKey> {
@@ -890,6 +1281,679 @@ function QrGlyph({ seed }: { seed: string }) {
 }
 
 /* -------------------------------------------------------------------------- */
+/*  Language switch                                                           */
+/* -------------------------------------------------------------------------- */
+
+function LangSwitch({
+  lang,
+  onChange,
+  compact = false,
+}: {
+  lang: Lang;
+  onChange: (next: Lang) => void;
+  compact?: boolean;
+}) {
+  return (
+    <div
+      role="group"
+      aria-label="Язык интерфейса / Интерфейс тілі"
+      className={`inline-flex shrink-0 items-center rounded-full border border-[#1E4233] bg-[#06110C]/70 ${
+        compact ? "p-0.5" : "p-0.5"
+      }`}
+    >
+      {(["ru", "kk"] as const).map((option) => {
+        const active = lang === option;
+        return (
+          <button
+            key={option}
+            type="button"
+            aria-pressed={active}
+            onClick={() => onChange(option)}
+            className={`rounded-full px-2 py-1 text-[9.5px] font-medium uppercase tracking-[0.04em] transition-colors ${
+              active
+                ? "bg-[#00A859] text-[#04130C]"
+                : "text-[#7FA793] hover:text-[#E8F5EE]"
+            }`}
+          >
+            {option === "ru" ? DICT.ru.langRu : DICT.ru.langKk}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Live call transcription                                                   */
+/* -------------------------------------------------------------------------- */
+
+interface StreamLine {
+  time: string;
+  text: string;
+  highlight: string;
+  badge: string;
+  tone: "danger" | "warn" | "success";
+}
+
+const SCAM_STREAM_LINES: StreamLine[] = [
+  {
+    time: "00:02",
+    text: "«...Алло, это старший следователь и куратор Нацбанка РК...»",
+    highlight: "старший следователь и куратор Нацбанка РК",
+    badge: "Имитация госорганов",
+    tone: "danger",
+  },
+  {
+    time: "00:05",
+    text: "«...на ваше имя прямо сейчас оформляют зеркальный кредит...»",
+    highlight: "прямо сейчас оформляют зеркальный кредит",
+    badge: "Запугивание",
+    tone: "warn",
+  },
+  {
+    time: "00:08",
+    text: "«...срочно скопируйте номер карты резервного счета из WhatsApp и переведите средства...»",
+    highlight: "номер карты резервного счета из WhatsApp",
+    badge: "Реквизиты дроппера",
+    tone: "danger",
+  },
+];
+
+const STREAM_TONE: Record<
+  StreamLine["tone"],
+  { badge: string; mark: string; dot: string }
+> = {
+  danger: {
+    badge: "border-[#EF4444]/40 bg-[#EF4444]/10 text-[#FCA5A5]",
+    mark: "bg-[#EF4444]/25 text-[#FECACA]",
+    dot: "bg-[#EF4444]",
+  },
+  warn: {
+    badge: "border-[#F59E0B]/40 bg-[#F59E0B]/10 text-[#FCD34D]",
+    mark: "bg-[#F59E0B]/25 text-[#FDE68A]",
+    dot: "bg-[#F59E0B]",
+  },
+  success: {
+    badge: "border-[#10B981]/40 bg-[#10B981]/10 text-[#6EE7B7]",
+    mark: "bg-[#10B981]/25 text-[#A7F3D0]",
+    dot: "bg-[#10B981]",
+  },
+};
+
+function LiveCallStream({
+  mode,
+  lang,
+  sessionCode,
+}: {
+  mode: "scam" | "official";
+  lang: Lang;
+  sessionCode: string;
+}) {
+  const t = (key: DictKey) => DICT[lang][key];
+  const officialText = `«Здравствуйте! Это Айгерим, служба заботы Банка ЦентрКредит. Ваше кодовое слово в приложении — ${sessionCode}»`;
+
+  const lines = useMemo<StreamLine[]>(() => {
+    if (mode === "official") {
+      return [
+        {
+          time: "00:02",
+          text: officialText,
+          highlight: sessionCode,
+          badge: t("radarVerified"),
+          tone: "success",
+        },
+      ];
+    }
+    return SCAM_STREAM_LINES;
+  }, [mode, officialText, sessionCode, lang]);
+
+  const [visible, setVisible] = useState(1);
+
+  useEffect(() => {
+    setVisible(1);
+    if (lines.length <= 1) return;
+
+    let index = 1;
+    const interval = window.setInterval(() => {
+      index += 1;
+      setVisible(Math.min(index, lines.length));
+      if (index >= lines.length) window.clearInterval(interval);
+    }, 2500);
+
+    return () => window.clearInterval(interval);
+  }, [mode, lines.length]);
+
+  const scam = mode === "scam";
+
+  return (
+    <div
+      className={`rounded-2xl border p-3 ${
+        scam
+          ? "border-[#EF4444]/40 bg-[#EF4444]/8"
+          : "border-[#10B981]/40 bg-[#10B981]/8"
+      }`}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex min-w-0 items-start gap-2">
+          <span
+            className={`mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-lg ${
+              scam
+                ? "bg-[#EF4444]/15 text-[#F87171]"
+                : "bg-[#10B981]/15 text-[#6EE7B7]"
+            }`}
+          >
+            <Mic size={13} />
+          </span>
+          <div className="min-w-0">
+            <p className="text-[10.5px] font-medium leading-tight text-[#E8F5EE]">
+              {t("liveTitle")}
+            </p>
+            <p className="mt-0.5 text-[8.5px] leading-snug text-[#7FA793]">
+              {t("liveHint")}
+            </p>
+          </div>
+        </div>
+        <span
+          className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-1.5 py-0.5 font-mono text-[7.5px] ${
+            scam
+              ? "border-[#EF4444]/40 text-[#FCA5A5]"
+              : "border-[#10B981]/40 text-[#6EE7B7]"
+          }`}
+        >
+          <span
+            className={`h-1 w-1 animate-live-pulse rounded-full ${
+              scam ? "bg-[#EF4444]" : "bg-[#10B981]"
+            }`}
+          />
+          REC
+        </span>
+      </div>
+
+      <div className="mt-2 flex items-center gap-2">
+        <div
+          className={`flex h-4 items-end gap-[2px] ${
+            scam ? "text-[#F87171]" : "text-[#6EE7B7]"
+          }`}
+          aria-hidden="true"
+        >
+          {[6, 11, 8, 14, 9, 5, 12].map((height, index) => (
+            <span
+              key={index}
+              className="w-[2px] animate-live-pulse rounded-full bg-current"
+              style={{
+                height,
+                animationDelay: `${index * 120}ms`,
+              }}
+            />
+          ))}
+        </div>
+        <span className="truncate font-mono text-[8px] uppercase tracking-[0.08em] text-[#7FA793]">
+          {scam ? t("liveScamLabel") : t("liveOfficialLabel")}
+        </span>
+      </div>
+
+      <ol className="mt-2 space-y-1.5" aria-live="polite">
+        {lines.slice(0, visible).map((line) => {
+          const tone = STREAM_TONE[line.tone];
+          const before = line.text.slice(
+            0,
+            line.text.indexOf(line.highlight),
+          );
+          const after = line.text.slice(
+            line.text.indexOf(line.highlight) + line.highlight.length,
+          );
+          return (
+            <li
+              key={`${line.time}-${line.badge}`}
+              className="animate-fade-rise rounded-lg border border-[#1E4233]/70 bg-[#06110C]/70 px-2 py-1.5"
+            >
+              <div className="flex items-start gap-1.5">
+                <span className={`mt-[5px] h-1 w-1 shrink-0 rounded-full ${tone.dot}`} />
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-1">
+                    <span className="font-mono text-[8px] text-[#648975]">
+                      [{line.time}]
+                    </span>
+                    <span
+                      className={`rounded border px-1 py-0.5 text-[7.5px] ${tone.badge}`}
+                    >
+                      [{line.badge}]
+                    </span>
+                  </div>
+                  <p className="mt-0.5 text-[9.5px] leading-snug text-[#CFE8DC]">
+                    {before}
+                    <mark className={`rounded px-0.5 ${tone.mark}`}>
+                      {line.highlight}
+                    </mark>
+                    {after}
+                  </p>
+                </div>
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Cooldown dialog (isolated timer)                                          */
+/* -------------------------------------------------------------------------- */
+
+function CooldownDialog({
+  pending,
+  lang,
+  onConfirm,
+  onCancel,
+}: {
+  pending: PendingTransfer;
+  lang: Lang;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  const [seconds, setSeconds] = useState(10);
+  const [checks, setChecks] = useState([false, false, false]);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setSeconds((value) => Math.max(0, value - 1));
+    }, 1000);
+    return () => window.clearInterval(interval);
+  }, []);
+
+  const canConfirm = seconds === 0 && checks.every(Boolean);
+  const kk = lang === "kk";
+
+  return (
+    <div className="absolute inset-0 z-50 overflow-y-auto bg-[#020806]/80 backdrop-blur-sm">
+      <div className="flex min-h-full items-center justify-center p-4">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Период охлаждения BCC SafeCall"
+          className="w-full max-w-[332px] animate-fade-rise rounded-2xl border border-[#F59E0B]/40 bg-[#0B1F17] p-5 shadow-panel"
+        >
+          <div className="flex items-start justify-between gap-2">
+            <div className="grid h-11 w-11 place-items-center rounded-xl border border-[#F59E0B]/35 bg-[#F59E0B]/10 text-[#FCD34D]">
+              <Timer size={20} />
+            </div>
+            <div className="text-right">
+              <p className="font-mono text-[26px] font-medium leading-none tabular-nums text-[#FCD34D]">
+                {seconds}
+              </p>
+              <p className="mt-0.5 text-[8.5px] text-[#7FA793]">
+                {kk ? "секунд" : "секунд"}
+              </p>
+            </div>
+          </div>
+
+          <h2 className="mt-3 text-[16px] font-medium leading-tight tracking-[-0.01em]">
+            {kk ? "BCC SafeCall салқындату кезеңі" : "Период охлаждения BCC SafeCall"}
+          </h2>
+          <p className="mt-1 text-[10px] leading-snug text-[#7FA793]">
+            {kk
+              ? "Операция тоқтатылды. Сұрақтарды оқып, сізді алаяқ басқармайтынына көз жеткізіңіз."
+              : "Операция приостановлена. Прочитайте вопросы и подтвердите, что вами не управляет мошенник."}
+          </p>
+
+          <div className="mt-2.5 flex items-center justify-between gap-2 rounded-lg border border-[#1E4233] bg-[#06110C] px-3 py-2">
+            <span className="text-[9.5px] text-[#A9CBB9]">
+              {pending.recipient}
+            </span>
+            <span className="font-mono text-[12px] tabular-nums text-[#E8F5EE]">
+              {formatKzt(pending.amount)}
+            </span>
+          </div>
+
+          <div className="mt-2.5 space-y-1.5">
+            {COOLDOWN_CHECKS.map((check, index) => (
+              <label
+                key={check}
+                className={`flex cursor-pointer items-start gap-2 rounded-lg border px-2.5 py-2 transition-colors ${
+                  checks[index]
+                    ? "border-[#10B981]/35 bg-[#10B981]/8"
+                    : "border-[#1E4233] bg-[#06110C]"
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={checks[index]}
+                  onChange={() =>
+                    setChecks((previous) =>
+                      previous.map((value, position) =>
+                        position === index ? !value : value,
+                      ),
+                    )
+                  }
+                  className="mt-0.5 h-4 w-4 shrink-0 accent-[#00A859]"
+                />
+                <span className="text-[9.5px] leading-snug text-[#CFE8DC]">
+                  {check}
+                </span>
+              </label>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={!canConfirm}
+            className={`mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-[11px] font-semibold transition-colors ${
+              canConfirm
+                ? "bg-[#00A859] text-[#04130C] hover:bg-[#10B981]"
+                : "cursor-not-allowed border border-[#1E4233] bg-[#122B21]/50 text-[#648975]"
+            }`}
+          >
+            <Check size={13} />
+            {kk ? "Аударымды растау" : "Подтвердить перевод"}
+          </button>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="mt-1.5 w-full rounded-lg border border-[#1E4233] px-3 py-2 text-[10.5px] text-[#A9CBB9] transition-colors hover:bg-[#122B21]"
+          >
+            {kk ? "Аударымнан бас тарту" : "Отменить перевод"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  HMAC crypto passport                                                      */
+/* -------------------------------------------------------------------------- */
+
+function CryptoPassport({
+  receipt,
+  amount,
+  tampered,
+  lang,
+}: {
+  receipt: SignedReceipt;
+  amount: number;
+  tampered: boolean;
+  lang: Lang;
+}) {
+  const t = (key: DictKey) => DICT[lang][key];
+  const [open, setOpen] = useState(false);
+  const [actual, setActual] = useState<VerifyResult | null>(null);
+  const [computing, setComputing] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setComputing(true);
+
+    verifyReceipt(
+      {
+        id: receipt.id,
+        timestamp: receipt.timestamp,
+        sender: receipt.sender,
+        recipient: receipt.recipient,
+        amount,
+      },
+      receipt.signature,
+    )
+      .then((result) => {
+        if (!cancelled) {
+          setActual(result);
+          setComputing(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setActual(null);
+          setComputing(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [receipt, amount]);
+
+  const mismatch = Boolean(actual && !actual.isValid);
+
+  return (
+    <div
+      className={`mx-3 mb-3 rounded-xl border ${
+        mismatch
+          ? "border-[#EF4444]/45 bg-[#EF4444]/8"
+          : "border-[#1E4233] bg-[#06110C]"
+      }`}
+    >
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        aria-expanded={open}
+        className="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left"
+      >
+        <span className="flex min-w-0 items-center gap-1.5 text-[10px] font-medium text-[#A7F3D0]">
+          <Fingerprint size={12} className="shrink-0 text-[#34D399]" />
+          <span className="truncate">
+            {open ? t("passportClose") : t("passportOpen")}
+          </span>
+        </span>
+        {open ? (
+          <ChevronUp size={13} className="shrink-0 text-[#7FA793]" />
+        ) : (
+          <ChevronDown size={13} className="shrink-0 text-[#7FA793]" />
+        )}
+      </button>
+
+      {open && (
+        <div className="border-t border-[#1E4233]/70 px-3 py-2.5">
+          <p className="text-[8px] font-medium uppercase tracking-[0.06em] text-[#648975]">
+            {t("passportCanonical")}
+          </p>
+          <p className="mt-1 break-all font-mono text-[8.5px] leading-snug text-[#CFE8DC]">
+            TX_ID | TIMESTAMP | SENDER_PAN | RECEIVER_PAN | AMOUNT_KZT | BCC-2026
+          </p>
+          <p className="mt-1 break-all rounded-md bg-[#0B1F17] px-2 py-1.5 font-mono text-[8px] leading-snug text-[#7FA793]">
+            {actual?.canonical ?? "…"}
+          </p>
+
+          <p className="mt-2.5 text-[8px] font-medium uppercase tracking-[0.06em] text-[#648975]">
+            {t("passportAlgorithm")}
+          </p>
+          <p className="mt-1 flex items-start gap-1.5 font-mono text-[8.5px] leading-snug text-[#A7F3D0]">
+            <BadgeCheck size={11} className="mt-0.5 shrink-0 text-[#34D399]" />
+            Web Crypto API (window.crypto.subtle.sign / HMAC-SHA256)
+          </p>
+
+          <dl className="mt-2.5 space-y-1.5">
+            <div className="rounded-md border border-[#1E4233] bg-[#0B1F17] px-2 py-1.5">
+              <dt className="text-[8px] text-[#648975]">
+                {t("passportStored")}
+              </dt>
+              <dd className="mt-0.5 break-all font-mono text-[9px] text-[#6EE7B7]">
+                {receipt.signature}
+              </dd>
+            </div>
+            <div
+              className={`rounded-md border px-2 py-1.5 ${
+                mismatch
+                  ? "border-[#EF4444]/40 bg-[#EF4444]/10"
+                  : "border-[#1E4233] bg-[#0B1F17]"
+              }`}
+            >
+              <dt className="text-[8px] text-[#648975]">
+                {t("passportActual")}
+              </dt>
+              <dd
+                className={`mt-0.5 break-all font-mono text-[9px] ${
+                  mismatch ? "text-[#F87171]" : "text-[#6EE7B7]"
+                }`}
+              >
+                {computing
+                  ? "…"
+                  : actual?.computed ?? "Web Crypto недоступен"}
+              </dd>
+            </div>
+          </dl>
+
+          <p
+            className={`mt-2 rounded-md px-2 py-1.5 text-[8.5px] font-medium leading-snug ${
+              mismatch
+                ? "bg-[#EF4444]/10 text-[#FECACA]"
+                : "bg-[#10B981]/10 text-[#A7F3D0]"
+            }`}
+          >
+            {mismatch
+              ? t("passportMismatch")
+              : t("passportMatch")}
+          </p>
+
+          {tampered && (
+            <p className="mt-1.5 font-mono text-[8px] text-[#B98D8D]">
+              amount_kzt: 15 000 → {formatNumber(amount)}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  NBRK antifraud report dialog                                              */
+/* -------------------------------------------------------------------------- */
+
+function NbrkReportDialog({
+  report,
+  lang,
+  onClose,
+}: {
+  report: NbrkReport;
+  lang: Lang;
+  onClose: () => void;
+}) {
+  const t = (key: DictKey) => DICT[lang][key];
+  const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState("");
+  const json = useMemo(() => JSON.stringify(report, null, 2), [report]);
+
+  const copyJson = async () => {
+    setCopyError("");
+    try {
+      await navigator.clipboard.writeText(json);
+      setCopied(true);
+    } catch {
+      setCopyError(
+        lang === "kk"
+          ? "Браузер буферге рұқсат бермеді"
+          : "Браузер запретил доступ к буферу обмена",
+      );
+    }
+  };
+
+  return (
+    <div className="absolute inset-0 z-50 overflow-y-auto bg-[#020806]/85 backdrop-blur-sm">
+      <div className="flex min-h-full items-center justify-center p-4">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={t("reportTitle")}
+          className="w-full max-w-[340px] animate-fade-rise rounded-2xl border border-[#34D399]/35 bg-[#0B1F17] p-4 shadow-panel"
+        >
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-start gap-2.5">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[#34D399]/35 bg-[#34D399]/10 text-[#6EE7B7]">
+                <Building2 size={18} />
+              </span>
+              <div>
+                <p className="text-[8.5px] text-[#7FA793]">
+                  NBRK · ANTIFRAUD GATEWAY
+                </p>
+                <h2 className="mt-0.5 text-[13px] font-medium leading-tight text-[#E8F5EE]">
+                  {t("reportTitle")}
+                </h2>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label={t("close")}
+              className="grid h-7 w-7 shrink-0 place-items-center rounded-md text-[#7FA793] transition-colors hover:bg-[#122B21] hover:text-[#E8F5EE]"
+            >
+              <X size={14} />
+            </button>
+          </div>
+
+          <div className="mt-2.5 flex items-center justify-between gap-2 rounded-lg border border-[#10B981]/30 bg-[#10B981]/8 px-2.5 py-2">
+            <span className="flex items-center gap-1.5 text-[9px] font-medium text-[#A7F3D0]">
+              <span className="h-1.5 w-1.5 animate-live-pulse rounded-full bg-[#10B981]" />
+              {t("reportSent")}
+            </span>
+            <ClipboardCheck size={13} className="text-[#6EE7B7]" />
+          </div>
+
+          <div className="mt-2.5 grid grid-cols-2 gap-x-2 gap-y-1.5 rounded-lg border border-[#1E4233] bg-[#06110C] px-2.5 py-2">
+            <div>
+              <p className="text-[7.5px] text-[#648975]">reportId</p>
+              <p className="mt-0.5 break-all font-mono text-[8.5px] text-[#CFE8DC]">
+                {report.reportId}
+              </p>
+            </div>
+            <div>
+              <p className="text-[7.5px] text-[#648975]">bankBic</p>
+              <p className="mt-0.5 font-mono text-[8.5px] text-[#CFE8DC]">
+                {report.bankBic}
+              </p>
+            </div>
+            <div>
+              <p className="text-[7.5px] text-[#648975]">riskScore</p>
+              <p className="mt-0.5 font-mono text-[8.5px] text-[#FCA5A5]">
+                {report.riskScore}/100
+              </p>
+            </div>
+            <div>
+              <p className="text-[7.5px] text-[#648975]">resolution</p>
+              <p className="mt-0.5 break-all font-mono text-[8px] text-[#6EE7B7]">
+                {report.resolution}
+              </p>
+            </div>
+          </div>
+
+          <p className="mt-2 flex items-center gap-1.5 text-[8.5px] text-[#648975]">
+            <FileJson size={11} />
+            JSON · NBRK-ANTIFRAUD-EXCHANGE-V2
+          </p>
+          <pre className="bcc-scroll mt-1 max-h-[178px] overflow-auto rounded-lg border border-[#1E4233] bg-[#06110C] p-2.5 font-mono text-[8px] leading-relaxed text-[#A9CBB9]">
+            {json}
+          </pre>
+
+          {copyError && (
+            <p className="mt-1.5 text-[9px] text-[#FCA5A5]">{copyError}</p>
+          )}
+
+          <button
+            type="button"
+            onClick={() => void copyJson()}
+            className={`mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-[10.5px] font-semibold transition-colors ${
+              copied
+                ? "border border-[#10B981]/40 bg-[#10B981]/10 text-[#A7F3D0]"
+                : "bg-[#00A859] text-[#04130C] hover:bg-[#10B981]"
+            }`}
+          >
+            {copied ? <CheckCircle2 size={13} /> : <Copy size={13} />}
+            {copied ? t("copied") : t("copyJson")}
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="mt-1.5 w-full rounded-lg border border-[#1E4233] px-3 py-2 text-[10px] text-[#A9CBB9] transition-colors hover:bg-[#122B21]"
+          >
+            {t("close")}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
 /*  Jury Control & Telemetry Deck                                             */
 /* -------------------------------------------------------------------------- */
 
@@ -898,12 +1962,15 @@ interface JuryPanelProps {
   factors: RiskFactors;
   role: ProfileRole;
   logs: TelemetryEntry[];
+  lang: Lang;
+  onLangChange: (next: Lang) => void;
   onToggleUnverifiedCall: () => void;
   onToggleOfficialCall: () => void;
   onToggleClipboard: () => void;
   onToggleRole: () => void;
   onStorm: () => void;
   onReset: () => void;
+  onResetDemo: () => void;
 }
 
 type JuryTone = "danger" | "success" | "warning" | "guardian";
@@ -984,31 +2051,38 @@ function JuryPanel({
   factors,
   role,
   logs,
+  lang,
+  onLangChange,
   onToggleUnverifiedCall,
   onToggleOfficialCall,
   onToggleClipboard,
   onToggleRole,
   onStorm,
   onReset,
+  onResetDemo,
 }: JuryPanelProps) {
   const meta = DECISION_META[risk.decision];
   const activeWeights = risk.weights.filter((weight) => weight.active);
+  const t = (key: DictKey) => DICT[lang][key];
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-3.5 rounded-2xl border border-[#1E4233] bg-[#0B1F17] p-4 shadow-panel">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-[16px] font-medium text-[#E8F5EE]">
-            Jury Control
+            {t("juryTitle")}
           </h2>
           <p className="mt-0.5 text-[10.5px] text-[#7FA793]">
-            Симуляция атак и телеметрия в реальном времени
+            {t("jurySubtitle")}
           </p>
         </div>
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-[#10B981]/30 bg-[#10B981]/10 px-2 py-1 text-[9.5px] text-[#6EE7B7]">
-          <span className="h-1.5 w-1.5 animate-live-pulse rounded-full bg-[#10B981]" />
-          LIVE
-        </span>
+        <div className="flex shrink-0 flex-col items-end gap-1.5">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-[#10B981]/30 bg-[#10B981]/10 px-2 py-1 text-[9.5px] text-[#6EE7B7]">
+            <span className="h-1.5 w-1.5 animate-live-pulse rounded-full bg-[#10B981]" />
+            LIVE
+          </span>
+          <LangSwitch lang={lang} onChange={onLangChange} compact />
+        </div>
       </div>
 
       <div className="rounded-xl border border-[#1E4233] bg-[#06110C] p-3.5">
@@ -1031,7 +2105,9 @@ function JuryPanel({
             >
               {meta.label}
             </span>
-            <p className="mt-1 text-[10px] text-[#7FA793]">{meta.ru}</p>
+            <p className="mt-1 text-[10px] text-[#7FA793]">
+              {t(DECISION_KEY[risk.decision])}
+            </p>
           </div>
         </div>
 
@@ -1070,7 +2146,7 @@ function JuryPanel({
       <div>
         <div className="mb-2 flex items-center justify-between px-0.5">
           <h3 className="text-[11px] font-medium text-[#A9CBB9]">
-            Сценарии атаки
+            {t("attackScenarios")}
           </h3>
           <span className="text-[9.5px] text-[#648975]">5 пресетов</span>
         </div>
@@ -1123,10 +2199,10 @@ function JuryPanel({
           </span>
           <span className="min-w-0 flex-1">
             <span className="block text-[11.5px] font-medium text-[#FCA5A5]">
-              Сценарий «Идеальный шторм»
+              {t("stormTitle")}
             </span>
             <span className="mt-0.5 block text-[10px] leading-snug text-[#B98D8D]">
-              Звонок мошенника + буфер + 450 000 ₸ в один клик
+              {t("stormHint")}
             </span>
           </span>
           <ArrowRight size={14} className="shrink-0 text-[#FCA5A5]" />
@@ -1138,7 +2214,16 @@ function JuryPanel({
           className="mt-1.5 flex w-full items-center justify-center gap-1.5 rounded-lg border border-[#1E4233] bg-transparent px-2 py-1.5 text-[10px] text-[#7FA793] transition-colors hover:bg-[#122B21] hover:text-[#E8F5EE]"
         >
           <RotateCcw size={11} />
-          Сбросить все триггеры
+          {t("resetTriggers")}
+        </button>
+
+        <button
+          type="button"
+          onClick={onResetDemo}
+          className="mt-1.5 flex w-full items-center justify-center gap-1.5 rounded-lg border border-[#34D399]/45 bg-[#34D399]/10 px-2 py-2 text-[10.5px] font-medium text-[#A7F3D0] transition-colors hover:bg-[#34D399]/16"
+        >
+          <RotateCcw size={12} />
+          {t("resetDemo")}
         </button>
       </div>
 
@@ -1195,6 +2280,9 @@ function JuryPanel({
 /* -------------------------------------------------------------------------- */
 
 export default function Page() {
+  const [isMounted, setIsMounted] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
+  const [lang, setLang] = useState<Lang>("ru");
   const [tab, setTab] = useState<Tab>("transfer");
   const [role, setRole] = useState<ProfileRole>("guardian");
   const [juryOpen, setJuryOpen] = useState(false);
@@ -1224,8 +2312,6 @@ export default function Page() {
   const [verifyLoading, setVerifyLoading] = useState(false);
 
   const [modal, setModal] = useState<ModalState>({ kind: "none" });
-  const [coolDown, setCoolDown] = useState(10);
-  const [checks, setChecks] = useState([false, false, false]);
 
   const [logs, setLogs] = useState<TelemetryEntry[]>([]);
   const logCounter = useRef(0);
@@ -1284,11 +2370,65 @@ export default function Page() {
     };
   }, [latestReceipt, tampered]);
 
-  const canConfirmCooldown = coolDown === 0 && checks.every(Boolean);
-  const scamSegments = useMemo(
-    () => (scamResult ? buildHighlightedSegments(scamText, scamResult.triggers) : []),
-    [scamResult, scamText],
+  const t = useCallback(
+    (key: DictKey) => DICT[lang][key],
+    [lang],
   );
+  const scamSegments = useMemo(
+    () =>
+      scamResult
+        ? buildHighlightedSegments(
+            scamResult.maskedText,
+            scamResult.triggers,
+          )
+        : [],
+    [scamResult],
+  );
+
+  /* Mark the client as mounted. Nothing reads storage or crypto before this. */
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  /*
+   * Hydrate the demo snapshot once, on the client. SSR always renders the
+   * seeded defaults, so server markup and the first client paint are identical.
+   */
+  useEffect(() => {
+    if (!isMounted) return;
+    const stored = loadPersistedState();
+    if (stored) {
+      setBalance(stored.balance);
+      setFamilyBalance(stored.familyBalance);
+      setTransfers(stored.transfers);
+      setHolds(stored.holds);
+      setSavedTotal(stored.savedTotal);
+      setLang(stored.lang);
+    }
+    setHydrated(true);
+  }, [isMounted]);
+
+  /* Persist only after hydration, otherwise the seed would overwrite storage. */
+  useEffect(() => {
+    if (!isMounted || !hydrated) return;
+    savePersistedState({
+      balance,
+      familyBalance,
+      transfers,
+      holds,
+      savedTotal,
+      lang,
+    });
+  }, [
+    isMounted,
+    hydrated,
+    balance,
+    familyBalance,
+    transfers,
+    holds,
+    savedTotal,
+    lang,
+  ]);
 
   /* Seed demo state on the client only, so SSR and hydration stay identical. */
   useEffect(() => {
@@ -1350,17 +2490,6 @@ export default function Page() {
       cancelled = true;
     };
   }, [pushLog]);
-
-  /* Cooldown countdown resets whenever the interception modal opens. */
-  useEffect(() => {
-    if (modal.kind !== "cooldown") return;
-    setCoolDown(10);
-    setChecks([false, false, false]);
-    const interval = window.setInterval(() => {
-      setCoolDown((value) => Math.max(0, value - 1));
-    }, 1000);
-    return () => window.clearInterval(interval);
-  }, [modal.kind]);
 
   useEffect(() => {
     if (!juryOpen) return;
@@ -1455,6 +2584,122 @@ export default function Page() {
     pushLog(
       "danger",
       "Идеальный шторм: звонок + буфер + 450 000 ₸. Risk Engine пересчитан",
+    );
+  };
+
+  const resetDemo = () => {
+    if (isMounted) {
+      try {
+        window.localStorage.removeItem(STORAGE_KEY);
+      } catch {
+        // Storage can be unavailable in private mode; state reset still works.
+      }
+    }
+
+    setUnverifiedCallActive(false);
+    setOfficialBccCallActive(false);
+    setClipboardUsed(false);
+    setRecentScamAlert(false);
+    setRole("guardian");
+    setTab("transfer");
+    setJuryOpen(false);
+    setRecipientMode("trusted");
+    setCardValue(TRUSTED_CARD);
+    setAmountText("");
+    setFormError("");
+    setBalance(INITIAL_BALANCE);
+    setFamilyBalance(INITIAL_FAMILY_BALANCE);
+    setTransfers([]);
+    setHolds([SEED_HOLD]);
+    setSavedTotal(0);
+    setGuardError("");
+    setTampered(false);
+    setVerifyResult(null);
+    setModal({ kind: "none" });
+    setScamText("");
+    setScamResult(null);
+    setScamError("");
+    setPhishUrl("");
+    setPhishResult(null);
+    setSessionCode("АЛТЫН-739");
+    setLang("ru");
+    setCryptoError("");
+    setLogs([]);
+    logCounter.current = 0;
+
+    const demoReceipt: Receipt = {
+      id: "BCC-2026-0412-88",
+      timestamp: new Date().toISOString(),
+      sender: "Марат Сериков",
+      recipient: "Алихан Сериков",
+      amount: 15_000,
+    };
+
+    signReceipt(demoReceipt)
+      .then(setLatestReceipt)
+      .catch(() => {
+        setCryptoError(
+          "Web Crypto недоступен. Откройте приложение по HTTPS или на localhost.",
+        );
+      });
+
+    pushLog(
+      "info",
+      "Демо сброшено к исходному состоянию: баланс 1 450 000 ₸, Апашка снова в очереди GuardPay",
+    );
+  };
+
+  const openNbrkReport = (input: {
+    score: number;
+    suspectPan: string;
+    amount: number;
+    victimName: string;
+    victimAge: number;
+    guardPayProtected: boolean;
+    incidentType: string;
+    extraFlags?: string[];
+  }) => {
+    const telemetryFlags = Array.from(
+      new Set([
+        ...risk.weights
+          .filter((weight) => weight.active)
+          .map((weight) => weight.key.toUpperCase()),
+        ...(unverifiedCallActive ? ["SIP_SPOOFING_DETECTED"] : []),
+        ...(clipboardUsed ? ["CLIPBOARD_INJECTION"] : []),
+        ...(recentScamAlert ? ["SCANNER_ALERT_ACTIVE"] : []),
+        ...(input.extraFlags ?? []),
+      ]),
+    );
+
+    const report: NbrkReport = {
+      schema: "NBRK-ANTIFRAUD-EXCHANGE-V2",
+      reportId: `NBRK-${new Date().getFullYear()}-${Date.now()
+        .toString()
+        .slice(-6)}`,
+      timestamp: new Date().toISOString(),
+      bankBic: "KCJBKZKX",
+      channel: "MOBILE_BANKING",
+      suspectPan: maskPan(input.suspectPan),
+      victimProfile: {
+        fullName: input.victimName,
+        age: input.victimAge,
+        guardPayProtected: input.guardPayProtected,
+      },
+      amountKzt: input.amount,
+      riskScore: input.score,
+      synergyBoostTriggered: risk.weights.some(
+        (weight) => weight.key === "synergy" && weight.active,
+      ),
+      telemetryFlags:
+        telemetryFlags.length > 0 ? telemetryFlags : ["MANUAL_JURY_SIMULATION"],
+      incidentType: input.incidentType,
+      resolution: "PREVENTED_BY_BCC_SHIELD_360",
+    };
+
+    setModal({ kind: "report", report });
+    pushLog(
+      "success",
+      `NBRK: рапорт ${report.reportId} сформирован и отправлен в шлюз НБ РК`,
     );
   };
 
@@ -1739,16 +2984,8 @@ export default function Page() {
     );
   };
 
-  const toggleCheck = (index: number) => {
-    setChecks((previous) =>
-      previous.map((value, position) =>
-        position === index ? !value : value,
-      ),
-    );
-  };
-
   const confirmCooldown = async () => {
-    if (modal.kind !== "cooldown" || !canConfirmCooldown) return;
+    if (modal.kind !== "cooldown") return;
     const pending = modal.pending;
     setModal({ kind: "none" });
     pushLog(
@@ -1873,7 +3110,9 @@ export default function Page() {
       if (
         typeof data.score !== "number" ||
         !Array.isArray(data.triggers) ||
-        !Array.isArray(data.advice)
+        !Array.isArray(data.advice) ||
+        !Array.isArray(data.pii) ||
+        typeof data.maskedText !== "string"
       ) {
         throw new Error("shape");
       }
@@ -1983,92 +3222,24 @@ export default function Page() {
       );
     }
 
-    if (modal.kind === "cooldown") {
-      const pending = modal.pending;
+    if (modal.kind === "report") {
       return (
-        <div className="absolute inset-0 z-50 overflow-y-auto bg-[#020806]/80 backdrop-blur-sm">
-          <div className="flex min-h-full items-center justify-center p-4">
-            <div
-              role="dialog"
-              aria-modal="true"
-              aria-label="Период охлаждения BCC SafeCall"
-              className="w-full max-w-[332px] animate-fade-rise rounded-2xl border border-[#F59E0B]/40 bg-[#0B1F17] p-5 shadow-panel"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="grid h-11 w-11 place-items-center rounded-xl border border-[#F59E0B]/35 bg-[#F59E0B]/10 text-[#FCD34D]">
-                  <Timer size={20} />
-                </div>
-                <div className="text-right">
-                  <p className="font-mono text-[26px] font-medium leading-none tabular-nums text-[#FCD34D]">
-                    {coolDown}
-                  </p>
-                  <p className="mt-0.5 text-[8.5px] text-[#7FA793]">секунд</p>
-                </div>
-              </div>
+        <NbrkReportDialog
+          report={modal.report}
+          lang={lang}
+          onClose={() => setModal({ kind: "none" })}
+        />
+      );
+    }
 
-              <h2 className="mt-3 text-[16px] font-medium leading-tight tracking-[-0.01em]">
-                Период охлаждения BCC SafeCall
-              </h2>
-              <p className="mt-1 text-[10px] leading-snug text-[#7FA793]">
-                Операция приостановлена. Прочитайте вопросы и подтвердите,
-                что вами не управляет мошенник.
-              </p>
-
-              <div className="mt-2.5 flex items-center justify-between gap-2 rounded-lg border border-[#1E4233] bg-[#06110C] px-3 py-2">
-                <span className="text-[9.5px] text-[#A9CBB9]">
-                  {pending.recipient}
-                </span>
-                <span className="font-mono text-[12px] tabular-nums text-[#E8F5EE]">
-                  {formatKzt(pending.amount)}
-                </span>
-              </div>
-
-              <div className="mt-2.5 space-y-1.5">
-                {COOLDOWN_CHECKS.map((check, index) => (
-                  <label
-                    key={check}
-                    className={`flex cursor-pointer items-start gap-2 rounded-lg border px-2.5 py-2 transition-colors ${
-                      checks[index]
-                        ? "border-[#10B981]/35 bg-[#10B981]/8"
-                        : "border-[#1E4233] bg-[#06110C]"
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={checks[index]}
-                      onChange={() => toggleCheck(index)}
-                      className="mt-0.5 h-4 w-4 shrink-0 accent-[#00A859]"
-                    />
-                    <span className="text-[9.5px] leading-snug text-[#CFE8DC]">
-                      {check}
-                    </span>
-                  </label>
-                ))}
-              </div>
-
-              <button
-                type="button"
-                onClick={() => void confirmCooldown()}
-                disabled={!canConfirmCooldown}
-                className={`mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-[11px] font-semibold transition-colors ${
-                  canConfirmCooldown
-                    ? "bg-[#00A859] text-[#04130C] hover:bg-[#10B981]"
-                    : "cursor-not-allowed border border-[#1E4233] bg-[#122B21]/50 text-[#648975]"
-                }`}
-              >
-                <Check size={13} />
-                Подтвердить перевод
-              </button>
-              <button
-                type="button"
-                onClick={cancelCooldown}
-                className="mt-1.5 w-full rounded-lg border border-[#1E4233] px-3 py-2 text-[10.5px] text-[#A9CBB9] transition-colors hover:bg-[#122B21]"
-              >
-                Отменить перевод
-              </button>
-            </div>
-          </div>
-        </div>
+    if (modal.kind === "cooldown") {
+      return (
+        <CooldownDialog
+          pending={modal.pending}
+          lang={lang}
+          onConfirm={() => void confirmCooldown()}
+          onCancel={cancelCooldown}
+        />
       );
     }
 
@@ -2184,8 +3355,28 @@ export default function Page() {
 
             <button
               type="button"
+              onClick={() =>
+                openNbrkReport({
+                  score,
+                  suspectPan: cardValue,
+                  amount,
+                  victimName:
+                    role === "protected" ? "Сауле Ахметова" : "Марат Сериков",
+                  victimAge: role === "protected" ? 68 : 34,
+                  guardPayProtected: true,
+                  incidentType: "UNIFIED_RISK_BLOCK",
+                  extraFlags: ["BLOCK_MODAL_CONFIRMED"],
+                })
+              }
+              className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-[#34D399]/45 bg-[#34D399]/10 px-3 py-2.5 text-[10.5px] font-medium text-[#A7F3D0] transition-colors hover:bg-[#34D399]/16"
+            >
+              <Building2 size={13} />
+              {t("reportCta")}
+            </button>
+            <button
+              type="button"
               onClick={resetAttack}
-              className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#00A859] px-3 py-2.5 text-[11px] font-semibold text-[#04130C] transition-colors hover:bg-[#10B981]"
+              className="mt-1.5 flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#00A859] px-3 py-2.5 text-[11px] font-semibold text-[#04130C] transition-colors hover:bg-[#10B981]"
             >
               <RotateCcw size={13} />
               Сбросить атаку
@@ -2245,23 +3436,26 @@ export default function Page() {
                     BCC Shield 360
                   </p>
                   <p className="truncate text-[10px] text-[#7FA793]">
-                    Банк ЦентрКредит
+                    {t("bankName")}
                   </p>
                 </div>
               </div>
-              <span className="hidden shrink-0 items-center gap-1.5 rounded-full border border-[#10B981]/30 bg-[#10B981]/10 px-2 py-1 text-[9.5px] text-[#6EE7B7] lg:inline-flex">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#10B981]" />
-                Защита включена
-              </span>
+              <div className="flex shrink-0 items-center gap-1.5">
+                <LangSwitch lang={lang} onChange={setLang} compact />
+                <span className="hidden shrink-0 items-center gap-1.5 rounded-full border border-[#10B981]/30 bg-[#10B981]/10 px-2 py-1 text-[9.5px] text-[#6EE7B7] lg:inline-flex">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#10B981]" />
+                  {t("protectionOn")}
+                </span>
+              </div>
             </div>
 
             <div className="mt-4 flex items-end justify-between gap-3">
               <div className="min-w-0">
                 <h1 className="truncate text-[22px] font-medium leading-tight tracking-[-0.02em]">
-                  {SCREEN_META[tab].title}
+                  {t(SCREEN_TITLE_KEY[tab])}
                 </h1>
                 <p className="mt-0.5 truncate text-[11px] text-[#7FA793]">
-                  {SCREEN_META[tab].subtitle}
+                  {t(SCREEN_SUBTITLE_KEY[tab])}
                 </p>
               </div>
               <RiskBadge decision={risk.decision} score={risk.score} />
@@ -2278,10 +3472,18 @@ export default function Page() {
                       className="mt-0.5 shrink-0 text-[#F87171]"
                     />
                     <p className="text-[11px] leading-snug text-[#FECACA]">
-                      ⚠️ Обнаружен активный телефонный вызов с неизвестного
-                      номера! Включен усиленный контроль SafeCall
+                      {t("bannerScam")}
                     </p>
                   </div>
+                )}
+
+                {unverifiedCallActive && (
+                  <LiveCallStream
+                    key="scam-stream"
+                    mode="scam"
+                    lang={lang}
+                    sessionCode={sessionCode}
+                  />
                 )}
 
                 {officialBccCallActive && (
@@ -2291,12 +3493,21 @@ export default function Page() {
                       className="mt-0.5 shrink-0 text-[#6EE7B7]"
                     />
                     <p className="text-[11px] leading-snug text-[#A7F3D0]">
-                      🛡️ Верифицированный звонок BCC. Код:{" "}
+                      {t("bannerOfficial")}{" "}
                       <span className="font-mono font-medium">
                         {sessionCode}
                       </span>
                     </p>
                   </div>
+                )}
+
+                {officialBccCallActive && (
+                  <LiveCallStream
+                    key="official-stream"
+                    mode="official"
+                    lang={lang}
+                    sessionCode={sessionCode}
+                  />
                 )}
 
                 <div className="relative overflow-hidden rounded-2xl border border-[#1E4233] bg-[radial-gradient(130%_130%_at_100%_0%,#143A29_0%,#0E2A1F_58%,#0D241B_100%)] p-4">
@@ -2309,13 +3520,13 @@ export default function Page() {
                     </div>
                     <span className="rounded-full border border-[#34D399]/25 bg-[#06110C]/40 px-2 py-0.5 text-[9.5px] text-[#A7F3D0]">
                       {role === "guardian"
-                        ? "Владелец счета"
-                        : "Защищаемый профиль: Апашка"}
+                        ? t("ownerAccount")
+                        : t("protectedProfile")}
                     </span>
                   </div>
 
                   <p className="mt-5 text-[10px] text-[#8FB6A1]">
-                    Доступный баланс
+                    {t("balanceLabel")}
                   </p>
                   <p className="mt-0.5 text-[28px] font-medium leading-none tabular-nums tracking-[-0.02em]">
                     {formatKzt(balance)}
@@ -2340,7 +3551,7 @@ export default function Page() {
                 <div className="rounded-2xl border border-[#1E4233] bg-[#122B21]/55 p-4">
                   <div className="flex items-center justify-between gap-2">
                     <label className="text-[11px] font-medium text-[#A9CBB9]">
-                      Получатель
+                      {t("recipientLabel")}
                     </label>
                     <span
                       className={`inline-flex items-center gap-1.5 text-[9.5px] ${
@@ -2374,10 +3585,10 @@ export default function Page() {
                       }`}
                     >
                       <span className="block text-[11px] font-medium">
-                        Доверенный контакт
+                        {t("trustedContact")}
                       </span>
                       <span className="mt-0.5 block text-[9.5px] text-[#7FA793]">
-                        Сын Алихан
+                        {t("trustedHint")}
                       </span>
                     </button>
                     <button
@@ -2391,10 +3602,10 @@ export default function Page() {
                       }`}
                     >
                       <span className="block text-[11px] font-medium">
-                        Неизвестный получатель
+                        {t("unknownRecipient")}
                       </span>
                       <span className="mt-0.5 block text-[9.5px] text-[#7FA793]">
-                        Карта дроппера
+                        {t("dropperCard")}
                       </span>
                     </button>
                   </div>
@@ -2403,7 +3614,7 @@ export default function Page() {
                     htmlFor="recipient-card"
                     className="mt-3 block text-[10px] text-[#7FA793]"
                   >
-                    Карта или телефон получателя
+                    {t("cardLabel")}
                   </label>
                   <input
                     id="recipient-card"
@@ -2422,14 +3633,14 @@ export default function Page() {
                     className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-[#F59E0B]/30 bg-[#F59E0B]/8 px-2.5 py-2 text-[10.5px] text-[#FCD34D] transition-colors hover:bg-[#F59E0B]/12"
                   >
                     <ClipboardPaste size={13} />
-                    📋 Вставить карту из WhatsApp
+                    {t("pasteWhatsApp")}
                   </button>
 
                   <label
                     htmlFor="transfer-amount"
                     className="mt-3 block text-[10px] text-[#7FA793]"
                   >
-                    Сумма перевода
+                    {t("amountLabel")}
                   </label>
                   <div className="relative mt-1 flex h-12 items-center rounded-xl border border-[#1E4233] bg-[#0B1F17] px-3 transition-colors focus-within:border-[#00A859]/70">
                     <input
@@ -2471,10 +3682,10 @@ export default function Page() {
                   >
                     <span className="flex items-center gap-1.5 text-[10.5px]">
                       <Gauge size={13} />
-                      Предрасчет риска
+                      {t("riskPreview")}
                     </span>
                     <span className="font-mono text-[11.5px] font-medium tabular-nums">
-                      {risk.score}/100 · {decisionMeta.ru}
+                      {risk.score}/100 · {t(DECISION_KEY[risk.decision])}
                     </span>
                   </div>
 
@@ -2491,14 +3702,14 @@ export default function Page() {
                     className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#00A859] text-[14px] font-semibold text-[#04130C] transition-colors hover:bg-[#10B981] active:scale-[0.99]"
                   >
                     <Send size={16} />
-                    Перевести
+                    {t("sendButton")}
                   </button>
                 </div>
 
                 <div className="rounded-2xl border border-[#1E4233] bg-[#0B1F17] p-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-[11.5px] font-medium text-[#A9CBB9]">
-                      Последние операции
+                      {t("recentOps")}
                     </h3>
                     <span className="font-mono text-[9.5px] text-[#648975]">
                       {transfers.length}
@@ -2508,7 +3719,7 @@ export default function Page() {
                   {transfers.length === 0 ? (
                     <div className="mt-2.5 flex items-center gap-2 rounded-lg border border-dashed border-[#1E4233] px-3 py-3 text-[10.5px] text-[#7FA793]">
                       <Clock3 size={13} />
-                      Проведенных операций пока нет
+                      {t("noOps")}
                     </div>
                   ) : (
                     <ul className="mt-2.5 space-y-2">
@@ -2571,7 +3782,7 @@ export default function Page() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <h2 className="text-[14px] font-medium">
-                          Радар телефонной линии
+                          {t("radarTitle")}
                         </h2>
                         <span
                           className={`rounded-full border px-1.5 py-0.5 text-[8.5px] ${
@@ -2583,10 +3794,10 @@ export default function Page() {
                           }`}
                         >
                           {unverifiedCallActive
-                            ? "SIP-СПУФИНГ"
+                            ? t("radarSpoof")
                             : officialBccCallActive
-                              ? "VERIFIED"
-                              : "МОНИТОРИНГ"}
+                              ? t("radarVerified")
+                              : t("radarMonitoring")}
                         </span>
                       </div>
                       <p
@@ -2599,10 +3810,10 @@ export default function Page() {
                         }`}
                       >
                         {unverifiedCallActive
-                          ? "🚨 ТРЕВОГА: Идет вызов, но сервер BCC НЕ подтверждает звонок! Это подмена номера (SIP-спуфинг). Немедленно положите трубку!"
+                          ? t("radarScamText")
                           : officialBccCallActive
-                            ? "✅ ВЕРИФИЦИРОВАНО: С вами говорит Айгерим Садыкова (Отдел мониторинга BCC)"
-                            : "Линия чиста: активных звонков от BCC нет. SIP-мониторинг работает в фоне."}
+                            ? t("radarVerifiedText")
+                            : t("radarIdleText")}
                       </p>
                     </div>
                   </div>
@@ -2610,7 +3821,7 @@ export default function Page() {
                   {officialBccCallActive && (
                     <div className="mt-3 rounded-xl border border-[#10B981]/30 bg-[#06110C]/70 p-3">
                       <p className="text-[9.5px] text-[#7FA793]">
-                        Одноразовое кодовое слово сессии
+                        {t("sessionWord")}
                       </p>
                       <div className="mt-1 flex items-center justify-between gap-2">
                         <span className="font-mono text-[19px] tracking-[0.06em] text-[#6EE7B7]">
@@ -2622,12 +3833,11 @@ export default function Page() {
                           className="inline-flex items-center gap-1 rounded-md border border-[#10B981]/30 bg-[#10B981]/10 px-2 py-1 text-[9.5px] text-[#6EE7B7] transition-colors hover:bg-[#10B981]/15"
                         >
                           <RotateCcw size={10} />
-                          Новое слово
+                          {t("newWord")}
                         </button>
                       </div>
                       <p className="mt-1.5 text-[9.5px] leading-snug text-[#7FA793]">
-                        Спросите оператора: «Назовите кодовое слово сессии».
-                        Если слово не совпало — это мошенник.
+                        {t("sessionHint")}
                       </p>
                     </div>
                   )}
@@ -2641,10 +3851,10 @@ export default function Page() {
                       </span>
                       <div className="min-w-0">
                         <h2 className="text-[12.5px] font-medium">
-                          Крипто-печать чека
+                          {t("receiptTitle")}
                         </h2>
                         <p className="text-[9.5px] text-[#7FA793]">
-                          HMAC-SHA256 · Web Crypto API
+                          {t("receiptSubtitle")}
                         </p>
                       </div>
                     </div>
@@ -2671,7 +3881,7 @@ export default function Page() {
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
                             <p className="text-[9.5px] text-[#7FA793]">
-                              Сумма по чеку
+                              {t("amountOnReceipt")}
                             </p>
                             <p
                               className={`mt-1 text-[24px] font-medium leading-none tabular-nums tracking-[-0.02em] ${
@@ -2692,7 +3902,7 @@ export default function Page() {
                         <dl className="mt-4 grid grid-cols-2 gap-x-3 gap-y-2.5">
                           <div>
                             <dt className="text-[8.5px] text-[#648975]">
-                              Операция
+                              {t("receiptOperation")}
                             </dt>
                             <dd className="mt-0.5 break-all font-mono text-[9.5px] text-[#CFE8DC]">
                               {displayedReceipt.id}
@@ -2700,7 +3910,7 @@ export default function Page() {
                           </div>
                           <div>
                             <dt className="text-[8.5px] text-[#648975]">
-                              Дата и время
+                              {t("receiptDate")}
                             </dt>
                             <dd className="mt-0.5 text-[9.5px] text-[#CFE8DC]">
                               {formatDateTime(displayedReceipt.timestamp)}
@@ -2708,7 +3918,7 @@ export default function Page() {
                           </div>
                           <div>
                             <dt className="text-[8.5px] text-[#648975]">
-                              Отправитель
+                              {t("receiptSender")}
                             </dt>
                             <dd className="mt-0.5 text-[9.5px] text-[#CFE8DC]">
                               {displayedReceipt.sender}
@@ -2716,7 +3926,7 @@ export default function Page() {
                           </div>
                           <div>
                             <dt className="text-[8.5px] text-[#648975]">
-                              Получатель
+                              {t("receiptRecipient")}
                             </dt>
                             <dd className="mt-0.5 text-[9.5px] text-[#CFE8DC]">
                               {displayedReceipt.recipient}
@@ -2727,7 +3937,7 @@ export default function Page() {
                         <div className="mt-3 flex items-center justify-between gap-2 rounded-lg border border-[#34D399]/25 bg-[#06110C]/60 px-3 py-2">
                           <div className="min-w-0">
                             <p className="text-[8.5px] text-[#648975]">
-                              Цифровая подпись
+                              {t("signatureLabel")}
                             </p>
                             <p className="mt-0.5 truncate font-mono text-[10.5px] text-[#6EE7B7]">
                               {latestReceipt.signature}
@@ -2753,16 +3963,20 @@ export default function Page() {
                         </div>
                       </div>
 
+                      <CryptoPassport
+                        receipt={latestReceipt}
+                        amount={displayedReceipt.amount}
+                        tampered={tampered}
+                        lang={lang}
+                      />
+
                       <div className="space-y-2 border-t border-[#1E4233]/70 p-3">
                         <button
                           type="button"
                           onClick={toggleTamper}
                           className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-[#F59E0B]/35 bg-[#F59E0B]/8 px-2 py-2.5 text-[10.5px] text-[#FCD34D] transition-colors hover:bg-[#F59E0B]/12"
                         >
-                          🛠{" "}
-                          {tampered
-                            ? "Вернуть оригинальную сумму чека"
-                            : "Симулировать подделку в Фотошопе (приписать «00» к сумме)"}
+                          {t(tampered ? "tamperOff" : "tamperOn")}
                         </button>
                         <button
                           type="button"
@@ -2775,10 +3989,9 @@ export default function Page() {
                           ) : (
                             <Fingerprint size={13} />
                           )}
-                          🔍{" "}
                           {verifyLoading
-                            ? "Пересчитываем HMAC-SHA256…"
-                            : "Запустить крипто-проверку чека"}
+                            ? t("verifyRunning")
+                            : t("verifyCta")}
                         </button>
                       </div>
 
@@ -2855,15 +4068,15 @@ export default function Page() {
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-[9.5px] text-[#7FA793]">
-                        Семейный мультисиг
+                        {t("familyMultisig")}
                       </p>
                       <h2 className="mt-0.5 text-[15px] font-medium">
-                        Круг защиты
+                        {t("guardCircle")}
                       </h2>
                     </div>
                     <div className="rounded-xl border border-[#34D399]/25 bg-[#06110C]/50 px-2.5 py-1.5 text-right">
                       <p className="text-[8.5px] text-[#7FA793]">
-                        Спасено от мошенников
+                        {t("savedLabel")}
                       </p>
                       <p className="mt-0.5 font-mono text-[12px] tabular-nums text-[#6EE7B7]">
                         {formatKzt(savedTotal)}
@@ -2884,7 +4097,7 @@ export default function Page() {
                           : "text-[#7FA793] hover:text-[#E8F5EE]"
                       }`}
                     >
-                      Хранитель (Марат)
+                      {t("guardianTab")}
                     </button>
                     <button
                       type="button"
@@ -2898,7 +4111,7 @@ export default function Page() {
                           : "text-[#7FA793] hover:text-[#E8F5EE]"
                       }`}
                     >
-                      Апашка, 68 лет
+                      {t("protectedTab")}
                     </button>
                   </div>
 
@@ -2936,7 +4149,7 @@ export default function Page() {
                 <div className="rounded-2xl border border-[#1E4233] bg-[#0B1F17] p-4">
                   <div className="flex items-center justify-between gap-2">
                     <h2 className="text-[12px] font-medium">
-                      Запросы на подтверждение
+                      {t("requestsTitle")}
                     </h2>
                     <span
                       className={`rounded-full border px-2 py-0.5 font-mono text-[9px] ${
@@ -2960,7 +4173,7 @@ export default function Page() {
                     {holds.length === 0 && (
                       <div className="flex items-center gap-2 rounded-lg border border-dashed border-[#1E4233] px-3 py-3 text-[10.5px] text-[#7FA793]">
                         <ShieldCheck size={13} />
-                        Замороженных переводов нет
+                        {t("noHolds")}
                       </div>
                     )}
 
@@ -2994,10 +4207,10 @@ export default function Page() {
                             }`}
                           >
                             {hold.status === "pending"
-                              ? "НА ПОДТВЕРЖДЕНИИ"
+                              ? t("holdPending")
                               : hold.status === "approved"
-                                ? "ПРОВЕДЕНО"
-                                : "ЗАБЛОКИРОВАНО"}
+                                ? t("holdApproved")
+                                : t("holdBlocked")}
                           </span>
                         </div>
 
@@ -3020,6 +4233,32 @@ export default function Page() {
                           {hold.signature ? ` · ${hold.signature}` : ""}
                         </p>
 
+                        {hold.status === "blocked" && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              openNbrkReport({
+                                score: Math.max(risk.score, 85),
+                                suspectPan: hold.to,
+                                amount: hold.amount,
+                                victimName: hold.from,
+                                victimAge:
+                                  hold.fromAlias.includes("68") ? 68 : 34,
+                                guardPayProtected: true,
+                                incidentType: "GUARDPAY_MULTISIG_BLOCK",
+                                extraFlags: [
+                                  "GUARDIAN_BLOCKED_HOLD",
+                                  hold.id,
+                                ],
+                              })
+                            }
+                            className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-lg border border-[#34D399]/40 bg-[#34D399]/10 px-2 py-2 text-[9.5px] font-medium text-[#A7F3D0] transition-colors hover:bg-[#34D399]/16"
+                          >
+                            <Building2 size={12} />
+                            {t("reportCta")}
+                          </button>
+                        )}
+
                         {hold.status === "pending" &&
                           role === "guardian" && (
                             <div className="mt-2.5 space-y-1.5">
@@ -3029,7 +4268,7 @@ export default function Page() {
                                 className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#00A859] px-2 py-2 text-[10px] font-semibold text-[#04130C] transition-colors hover:bg-[#10B981]"
                               >
                                 <Check size={12} />
-                                ✅ Одобрить и провести
+                                {t("approveHold")}
                               </button>
                               <button
                                 type="button"
@@ -3037,7 +4276,7 @@ export default function Page() {
                                 className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-[#EF4444]/40 bg-[#EF4444]/10 px-2 py-2 text-[10px] font-medium text-[#FCA5A5] transition-colors hover:bg-[#EF4444]/15"
                               >
                                 <Ban size={12} />
-                                🛑 Заблокировать перевод (Спасти средства)
+                                {t("blockHold")}
                               </button>
                             </div>
                           )}
@@ -3046,7 +4285,7 @@ export default function Page() {
                           role === "protected" && (
                             <p className="mt-2 flex items-center gap-1.5 text-[9px] text-[#A9CBB9]">
                               <Lock size={10} />
-                              Одобрение доступно Хранителю семьи
+                              {t("guardianOnly")}
                             </p>
                           )}
                       </div>
@@ -3061,10 +4300,10 @@ export default function Page() {
                     </span>
                     <div>
                       <h2 className="text-[12px] font-medium">
-                        Антифишинг-песочница
+                        {t("antiphishTitle")}
                       </h2>
                       <p className="mt-0.5 text-[9.5px] text-[#7FA793]">
-                        Проверка URL перед оплатой
+                        {t("antiphishHint")}
                       </p>
                     </div>
                   </div>
@@ -3127,7 +4366,7 @@ export default function Page() {
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0">
                               <p className="text-[8.5px] text-[#7FA793]">
-                                Вердикт песочницы
+                                {t("sandboxVerdict")}
                               </p>
                               <p
                                 className={`mt-0.5 text-[12px] font-medium ${tone.text}`}
@@ -3204,10 +4443,10 @@ export default function Page() {
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <h2 className="text-[13px] font-medium">
-                        Текст сообщения или звонка
+                        {t("scannerInputTitle")}
                       </h2>
                       <p className="mt-0.5 text-[9.5px] text-[#7FA793]">
-                        SMS, WhatsApp, Telegram или расшифровка разговора
+                        {t("scannerInputHint")}
                       </p>
                     </div>
                     <span className="rounded-md border border-[#1E4233] bg-[#0B1F17] px-1.5 py-0.5 font-mono text-[8px] text-[#648975]">
@@ -3245,6 +4484,28 @@ export default function Page() {
                     )}
                   </div>
 
+                  <div className="mt-2.5 flex items-start gap-1.5 rounded-lg border border-[#34D399]/25 bg-[#34D399]/8 px-2.5 py-2">
+                    <ShieldCheck
+                      size={12}
+                      className="mt-0.5 shrink-0 text-[#34D399]"
+                    />
+                    <div className="min-w-0">
+                      <p className="text-[8.5px] leading-snug text-[#A7F3D0]">
+                        {t("piiBadge")}
+                      </p>
+                      {scamResult && scamResult.pii.length > 0 && (
+                        <p className="mt-1 font-mono text-[8px] text-[#6EE7B7]">
+                          {scamResult.pii
+                            .map(
+                              (finding) =>
+                                `${finding.label}: ${finding.count}`,
+                            )
+                            .join(" · ")}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
                   <div className="mt-2.5 space-y-1.5">
                     {SCAM_PRESETS.map((preset) => (
                       <button
@@ -3279,8 +4540,8 @@ export default function Page() {
                       <Fingerprint size={15} />
                     )}
                     {scamLoading
-                      ? "Анализируем текст…"
-                      : "Анализировать через AI Scam-Scanner"}
+                      ? t("analyzingButton")
+                      : t("analyzeButton")}
                   </button>
 
                   {scamError && (
@@ -3307,7 +4568,7 @@ export default function Page() {
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
                             <p className="text-[9px] text-[#7FA793]">
-                              Вероятность мошенничества
+                              {t("probabilityLabel")}
                             </p>
                             <p
                               className={`mt-0.5 font-mono text-[34px] font-medium leading-none tabular-nums ${tone.text}`}
@@ -3357,11 +4618,11 @@ export default function Page() {
 
                         <div className="mt-3 rounded-xl border border-[#1E4233] bg-[#06110C] p-3">
                           <p className="text-[8.5px] text-[#648975]">
-                            Подсветка триггеров прямо в тексте
+                            {t("maskedTextLabel")}
                           </p>
                           <p className="mt-1.5 text-[10.5px] leading-relaxed text-[#CFE8DC]">
                             {scamSegments.length === 0
-                              ? scamText
+                              ? scamResult.maskedText
                               : scamSegments.map((segment, index) =>
                                   segment.trigger ? (
                                     <mark
@@ -3382,12 +4643,27 @@ export default function Page() {
                                   ),
                                 )}
                           </p>
+                          {scamResult.pii.length > 0 && (
+                            <div className="mt-2 flex flex-wrap gap-1">
+                              <span className="rounded border border-[#34D399]/30 bg-[#34D399]/10 px-1.5 py-0.5 text-[7.5px] text-[#A7F3D0]">
+                                🛡️ PII redacted on-device
+                              </span>
+                              {scamResult.pii.map((finding) => (
+                                <span
+                                  key={finding.type}
+                                  className="rounded border border-[#1E4233] bg-[#122B21] px-1.5 py-0.5 text-[7.5px] text-[#A9CBB9]"
+                                >
+                                  {finding.label} × {finding.count}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
 
                         {scamResult.triggers.length > 0 && (
                           <div className="mt-3 space-y-1.5">
                             <p className="text-[9px] font-medium text-[#7FA793]">
-                              Найденные приемы
+                              {t("triggersLabel")}
                             </p>
                             {uniqueTriggers.map((trigger, index) => (
                               <div
@@ -3444,8 +4720,8 @@ export default function Page() {
                             <Zap size={14} />
                           )}
                           {recentScamAlert
-                            ? "Повышенная защита активна (+25)"
-                            : "⚡ Активировать повышенную защиту в Risk Engine (+25 к порогу безопасности)"}
+                            ? t("protectionActive")
+                            : t("activateProtection")}
                         </button>
                       </div>
                     );
@@ -3463,14 +4739,22 @@ export default function Page() {
                 [
                   {
                     id: "transfer",
-                    label: "Перевод",
+                    labelKey: "navTransfer",
                     icon: ArrowLeftRight,
                   },
-                  { id: "trustlens", label: "TrustLens", icon: Radar },
-                  { id: "guardpay", label: "GuardPay", icon: Users },
+                  {
+                    id: "trustlens",
+                    labelKey: "navTrustlens",
+                    icon: Radar,
+                  },
+                  {
+                    id: "guardpay",
+                    labelKey: "navGuardpay",
+                    icon: Users,
+                  },
                   {
                     id: "scam",
-                    label: "Сканер",
+                    labelKey: "navScanner",
                     icon: MessageSquareWarning,
                   },
                 ] as const
@@ -3505,7 +4789,7 @@ export default function Page() {
                       )}
                     </span>
                     <span className="text-[8.5px] font-medium">
-                      {item.label}
+                      {t(item.labelKey)}
                     </span>
                   </button>
                 );
@@ -3537,12 +4821,15 @@ export default function Page() {
               factors={factors}
               role={role}
               logs={logs}
+              lang={lang}
+              onLangChange={setLang}
               onToggleUnverifiedCall={toggleUnverifiedCall}
               onToggleOfficialCall={toggleOfficialCall}
               onToggleClipboard={toggleClipboard}
               onToggleRole={toggleRole}
               onStorm={activateStorm}
               onReset={resetAttack}
+              onResetDemo={resetDemo}
             />
           </div>
         </aside>
@@ -3588,12 +4875,15 @@ export default function Page() {
                 factors={factors}
                 role={role}
                 logs={logs}
+                lang={lang}
+                onLangChange={setLang}
                 onToggleUnverifiedCall={toggleUnverifiedCall}
                 onToggleOfficialCall={toggleOfficialCall}
                 onToggleClipboard={toggleClipboard}
                 onToggleRole={toggleRole}
                 onStorm={activateStorm}
                 onReset={resetAttack}
+                onResetDemo={resetDemo}
               />
             </div>
           </div>

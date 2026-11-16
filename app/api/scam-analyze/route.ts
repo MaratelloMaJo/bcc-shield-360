@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { analyzeScamText, type ScamAnalysis } from "@/lib/scam-engine";
+import {
+  analyzeScamText,
+  type PiiFinding,
+  type ScamAnalysis,
+} from "@/lib/scam-engine";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -50,6 +54,31 @@ function mergeAiAssessment(
   };
 }
 
+function sanitizePii(value: unknown): PiiFinding[] {
+  if (!Array.isArray(value)) return [];
+
+  return value.flatMap((item) => {
+    if (
+      typeof item === "object" &&
+      item !== null &&
+      (item as PiiFinding).type !== undefined &&
+      typeof (item as PiiFinding).label === "string" &&
+      typeof (item as PiiFinding).count === "number"
+    ) {
+      const finding = item as PiiFinding;
+      if (finding.type !== "iin" && finding.type !== "card") return [];
+      return [
+        {
+          type: finding.type,
+          label: finding.label,
+          count: Math.max(0, Math.round(finding.count)),
+        },
+      ];
+    }
+    return [];
+  });
+}
+
 export async function POST(request: Request) {
   let text = "";
 
@@ -77,11 +106,17 @@ export async function POST(request: Request) {
     );
   }
 
+  /*
+   * Deterministic analysis always runs first. It performs the on-device PII
+   * scrub and returns `maskedText`; the raw IIN/PAN never reaches the LLM.
+   */
   const deterministic = analyzeScamText(text);
+  const safeText = deterministic.maskedText;
+  const pii = sanitizePii(deterministic.pii);
   const apiKey = process.env.OPENAI_API_KEY;
 
   if (!apiKey) {
-    return NextResponse.json(deterministic);
+    return NextResponse.json({ ...deterministic, pii });
   }
 
   try {
@@ -100,11 +135,11 @@ export async function POST(request: Request) {
           {
             role: "system",
             content:
-              "Ты антифрод-аналитик Банка ЦентрКредит (Казахстан). Оцени текст на социальную инженерию по матрице мошенничества РК: ложные сотрудники Нацбанка/КНБ/полиции, «безопасный счет», кража OTP 1414 и ЭЦП, фишинг доставки, лже-инвестиции, фейковые госвыплаты. Верни строго JSON без markdown: {\"score\": число 0-99, \"category\": краткая категория атаки, \"summary\": 1-2 предложения, \"verdict\": короткий вердикт}. Не занижай риск при наличии запроса секретных данных или перевода денег. Не добавляй поля.",
+              "Ты антифрод-аналитик Банка ЦентрКредит (Казахстан). Оцени текст на социальную инженерию по матрице мошенничества РК: ложные сотрудники Нацбанка/КНБ/полиции, «безопасный счет», кража OTP 1414 и ЭЦП, фишинг доставки, лже-инвестиции, фейковые госвыплаты, зеркальный кредит, карта дроппера. Токены [ИИН СКРЫТ ЗАЩИТОЙ ПДн РК] и [КАРТА СКРЫТА] — это уже обезличенные персональные данные, не пытайся их восстановить. Верни строго JSON без markdown: {\"score\": число 0-99, \"category\": краткая категория атаки, \"summary\": 1-2 предложения, \"verdict\": короткий вердикт}. Не занижай риск при наличии запроса секретных данных или перевода денег. Не добавляй поля.",
           },
           {
             role: "user",
-            content: `Текст для анализа:\n"""${text}"""`,
+            content: `Текст для анализа (PII уже обезличены на устройстве):\n"""${safeText}"""`,
           },
         ],
       }),
@@ -140,6 +175,8 @@ export async function GET() {
       method: "POST",
       body: { text: "string" },
       engine: process.env.OPENAI_API_KEY ? "hybrid" : "deterministic",
+      privacy:
+        "On-device PII scrubber masks 12-digit IIN and 16-digit card PAN before any LLM call.",
     },
     { status: 200 },
   );

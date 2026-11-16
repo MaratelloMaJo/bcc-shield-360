@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="BCC Shield 360">
+  <rect width="512" height="512" rx="112" fill="#00A859"/>
+  <path d="M256 88 408 148v104c0 88-60.8 147.2-152 168-91.2-20.8-152-80-152-168V148l152-60Z" fill="#06110C"/>
+  <path d="m192 256 46 46 84-96" stroke="#34D399" stroke-width="34" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>
