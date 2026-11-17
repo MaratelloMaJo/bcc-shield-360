@@ -4796,7 +4796,7 @@ export default function Page() {
 
                         <div className="mt-3 h-2 overflow-hidden rounded-full border border-line bg-raised">
                           <div
-                            className={`h-full origin-left rounded-full transition-transform duration-500 ${tone.bar}`}
+                            className={`h-full origin-left rounded-full transition-transform duration-200 ${tone.bar}`}
                             style={{
                               transform: `scaleX(${scamResult.score / 100})`,
                             }}
