@@ -10,8 +10,10 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: "/",
     display: "standalone",
     orientation: "portrait",
-    background_color: "#0B1F17",
-    theme_color: "#00A859",
+    // A manifest cannot read CSS variables: these mirror the light-theme
+    // `--bcc-canvas` (247 243 234) and `--bcc-accent` (14 110 90) in :root.
+    background_color: "#F7F3EA",
+    theme_color: "#0E6E5A",
     lang: "ru",
     dir: "ltr",
     categories: ["finance", "security", "utilities"],

@@ -1209,6 +1209,7 @@ function Toggle({
             : "border-line-strong bg-surface"
         }`}
       >
+        {/* 44 track − 2 border − 4 padding − 20 knob = 18px of travel. */}
         <span
           className={`h-5 w-5 rounded-full transition-transform duration-200 ${
             checked ? "translate-x-[18px] bg-surface" : "translate-x-0 bg-muted"
@@ -3760,7 +3761,7 @@ export default function Page() {
                     inputMode="numeric"
                     autoComplete="off"
                     placeholder="4400 0000 0000 0000"
-                    className="mt-1 h-11 w-full rounded-control border border-line bg-surface px-3 font-mono text-base text-ink outline-none transition-colors placeholder:text-muted focus:border-accent"
+                    className="mt-1 h-11 w-full rounded-control border border-line bg-surface px-3 font-mono text-section text-ink outline-none transition-colors placeholder:text-muted focus:border-accent"
                   />
 
                   <button
@@ -3806,7 +3807,7 @@ export default function Page() {
                           setAmountText(String(quickAmount));
                           setFormError("");
                         }}
-                        className="h-11 whitespace-nowrap rounded-control border border-line bg-surface px-2 text-meta font-medium tabular-nums text-ink-soft transition-colors hover:border-accent/35 hover:text-ink"
+                        className="h-11 whitespace-nowrap rounded-control border border-line bg-surface px-2 text-meta font-medium tabular-nums text-ink-soft transition-colors hover:border-accent/30 hover:text-ink"
                       >
                         {formatNumber(quickAmount)} ₸
                       </button>
@@ -3814,6 +3815,8 @@ export default function Page() {
                   </div>
 
                   <div
+                    role="status"
+                    aria-live="polite"
                     className={`mt-3 flex min-h-12 flex-wrap items-center justify-between gap-2 rounded-control border px-3 py-2 ${DECISION_TONE[risk.decision].badge}`}
                   >
                     <span className="flex shrink-0 items-center gap-2 text-meta">
@@ -3826,7 +3829,10 @@ export default function Page() {
                   </div>
 
                   {formError && (
-                    <p className="mt-2 flex items-center gap-2 text-meta text-danger-ink">
+                    <p
+                      role="alert"
+                      className="mt-2 flex items-center gap-2 text-meta text-danger-ink"
+                    >
                       <AlertTriangle size={12} />
                       {formError}
                     </p>
@@ -4501,7 +4507,7 @@ export default function Page() {
                       }}
                       placeholder="https://example.kz/pay"
                       aria-label="Ссылка для проверки"
-                      className="h-11 min-w-0 flex-1 rounded-control border border-line bg-surface px-3 font-mono text-base text-ink outline-none transition-colors placeholder:text-muted focus:border-accent"
+                      className="h-11 min-w-0 flex-1 rounded-control border border-line bg-surface px-3 font-mono text-section text-ink outline-none transition-colors placeholder:text-muted focus:border-accent"
                     />
                     <button
                       type="submit"
@@ -4644,7 +4650,7 @@ export default function Page() {
                     rows={5}
                     maxLength={8000}
                     placeholder="Вставьте подозрительное сообщение целиком. Чем больше текста, тем точнее разбор приемов давления."
-                    className="bcc-scroll mt-3 min-h-[112px] w-full resize-y rounded-control border border-line bg-surface p-3 text-base leading-relaxed text-ink outline-none transition-colors placeholder:text-muted focus:border-accent"
+                    className="bcc-scroll mt-3 min-h-[112px] w-full resize-y rounded-control border border-line bg-surface p-3 text-section leading-relaxed text-ink outline-none transition-colors placeholder:text-muted focus:border-accent"
                   />
 
                   <div className="mt-1 flex min-h-11 items-center justify-between gap-3 text-meta text-muted">
@@ -4771,7 +4777,7 @@ export default function Page() {
                             </p>
                           </div>
                           <span
-                            className={`max-w-[170px] shrink-0 rounded-full border px-2 py-1 text-right text-meta font-medium leading-snug ${tone.badge}`}
+                            className={`max-w-[170px] shrink-0 rounded-control border px-2 py-1 text-right text-meta font-medium leading-snug ${tone.badge}`}
                           >
                             {scamResult.category}
                           </span>
