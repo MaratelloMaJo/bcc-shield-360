@@ -4939,11 +4939,11 @@ export default function Page() {
                       />
                     )}
                     <span
-                      className={`relative grid h-8 w-8 place-items-center rounded-control transition-colors lg:h-7 lg:w-7 ${
+                      className={`relative grid h-7 w-7 place-items-center rounded-control transition-colors ${
                         active ? "bg-accent-soft" : "bg-transparent"
                       }`}
                     >
-                      <Icon size={17} strokeWidth={active ? 2.3 : 1.9} />
+                      <Icon size={16} strokeWidth={active ? 2.3 : 1.9} />
                       {item.id === "guardpay" && pendingHolds.length > 0 && (
                         <span
                           aria-hidden="true"
