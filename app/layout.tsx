@@ -73,10 +73,9 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#F7F3EA" },
-    { media: "(prefers-color-scheme: dark)", color: "#0E1512" },
-  ],
+  // One static light canvas: the pre-paint script and applyTheme move this meta
+  // to the stored theme, so a media pair must not follow the OS instead.
+  themeColor: "#F7F3EA",
 };
 
 export default function RootLayout({
@@ -94,7 +93,7 @@ export default function RootLayout({
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{if(localStorage.getItem("bcc_shield_360_theme_v1")==="dark"){document.documentElement.dataset.theme="dark";document.documentElement.style.colorScheme="dark";}}catch(e){}})();`,
+            __html: `(function(){try{var t=localStorage.getItem("bcc_shield_360_theme_v1")==="dark"?"dark":"light";var h=document.documentElement;h.dataset.theme=t;h.style.colorScheme=t;var c=t==="dark"?"#0E1512":"#F7F3EA";var metas=document.querySelectorAll('meta[name="theme-color"]');for(var i=0;i<metas.length;i++){metas[i].content=c;}if(!metas.length){var m=document.createElement("meta");m.name="theme-color";m.content=c;document.head.appendChild(m);}}catch(e){}})();`,
           }}
         />
       </head>

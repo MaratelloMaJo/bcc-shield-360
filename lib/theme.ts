@@ -21,10 +21,17 @@ export function applyTheme(theme: Theme): void {
   if (typeof document === "undefined") return;
   document.documentElement.dataset.theme = theme;
   document.documentElement.style.colorScheme = theme;
-  // viewport emits one theme-color meta per media query, so sync every copy.
-  const metas = document.querySelectorAll<HTMLMetaElement>(
-    'meta[name="theme-color"]',
+  // Next emits a single static theme-color meta; sync every copy in case the
+  // pre-paint script had to create one before head parsing finished.
+  const metas = Array.from(
+    document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]'),
   );
+  if (metas.length === 0) {
+    const meta = document.createElement("meta");
+    meta.name = "theme-color";
+    metas.push(meta);
+    document.head.appendChild(meta);
+  }
   metas.forEach((meta) => {
     meta.content = THEME_COLOR[theme];
   });

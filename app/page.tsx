@@ -66,7 +66,7 @@ import {
   type ScamSeverity,
   type ScamTrigger,
 } from "@/lib/scam-engine";
-import { readTheme, toggleTheme, type Theme } from "@/lib/theme";
+import { applyTheme, readTheme, toggleTheme, type Theme } from "@/lib/theme";
 
 /* -------------------------------------------------------------------------- */
 /*  Domain types                                                              */
@@ -712,6 +712,25 @@ const DECISION_META: Record<
   },
 };
 
+const RISK_BADGE_TONE: Record<Decision, { badge: string; dot: string }> = {
+  ALLOW: {
+    badge: "border-safe/35 bg-safe-soft text-safe-ink",
+    dot: "bg-safe",
+  },
+  COOL_DOWN: {
+    badge: "border-warn/35 bg-warn-soft text-warn-ink",
+    dot: "bg-warn",
+  },
+  GUARDIAN_APPROVAL: {
+    badge: "border-guardian/35 bg-guardian-soft text-guardian",
+    dot: "bg-guardian",
+  },
+  BLOCK: {
+    badge: "border-danger/35 bg-danger-soft text-danger-ink",
+    dot: "bg-danger",
+  },
+};
+
 const SEVERITY_CLASS: Record<ScamSeverity, string> = {
   critical: "scam-mark scam-mark-critical",
   high: "scam-mark scam-mark-high",
@@ -1169,12 +1188,13 @@ function RiskBadge({
   withLabel?: boolean;
 }) {
   const meta = DECISION_META[decision];
+  const tone = RISK_BADGE_TONE[decision];
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[10px] tabular-nums ${meta.badgeClass}`}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-meta font-semibold tabular-nums ${tone.badge}`}
       title={`${meta.ru} · ${score}/100`}
     >
-      <span className={`h-1.5 w-1.5 rounded-full ${meta.dotClass}`} />
+      <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
       {score}
       {withLabel ? ` · ${meta.label}` : ""}
     </span>
@@ -1330,9 +1350,7 @@ function LangSwitch({
     <div
       role="group"
       aria-label="Язык интерфейса / Интерфейс тілі"
-      className={`inline-flex shrink-0 items-center rounded-full border border-[#1E4233] bg-[#06110C]/70 ${
-        compact ? "p-0.5" : "p-0.5"
-      }`}
+      className="inline-flex h-11 shrink-0 items-center rounded-full bg-surface ring-1 ring-line"
     >
       {(["ru", "kk"] as const).map((option) => {
         const active = lang === option;
@@ -1342,11 +1360,9 @@ function LangSwitch({
             type="button"
             aria-pressed={active}
             onClick={() => onChange(option)}
-            className={`rounded-full px-2 py-1 text-[9.5px] font-medium uppercase tracking-[0.04em] transition-colors ${
-              active
-                ? "bg-[#00A859] text-[#04130C]"
-                : "text-[#7FA793] hover:text-[#E8F5EE]"
-            }`}
+            className={`h-full min-w-11 rounded-full text-meta font-medium transition-colors ${
+              compact ? "px-2.5" : "px-3"
+            } ${active ? "bg-accent text-accent-ink" : "text-muted hover:text-ink"}`}
           >
             {option === "ru" ? DICT.ru.langRu : DICT.ru.langKk}
           </button>
@@ -2130,7 +2146,7 @@ function JuryPanel({
   const t = (key: DictKey) => DICT[lang][key];
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3.5 rounded-2xl border border-[#1E4233] bg-[#0B1F17] p-4 shadow-panel">
+    <div className="flex min-h-full flex-col gap-3.5 rounded-2xl border border-[#1E4233] bg-[#0B1F17] p-4 shadow-panel">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-[16px] font-medium text-[#E8F5EE]">
@@ -2456,9 +2472,13 @@ export default function Page() {
     setIsMounted(true);
   }, []);
 
-  /* Theme has its own storage key; read it after mount so SSR stays light. */
+  /* Theme has its own storage key; read it after mount so SSR stays light.
+   * applyTheme is idempotent and re-syncs the html attribute, colorScheme, and
+   * theme-color meta if the pre-paint script could not find the meta yet. */
   useEffect(() => {
-    setTheme(readTheme());
+    const stored = readTheme();
+    applyTheme(stored);
+    setTheme(stored);
   }, []);
 
   /*
@@ -3493,14 +3513,14 @@ export default function Page() {
   };
 
   return (
-    <div className="h-[100dvh] w-full overflow-hidden bg-[#06110C] text-[#E8F5EE] lg:h-auto lg:min-h-[100dvh] lg:overflow-visible">
+    <div className="h-[100dvh] w-full overflow-hidden bg-canvas text-ink lg:h-auto lg:min-h-[100dvh] lg:overflow-visible">
       <div className="h-full w-full lg:mx-auto lg:flex lg:min-h-[100dvh] lg:max-w-[1500px] lg:items-center lg:justify-center lg:gap-10 lg:px-8 lg:py-4">
-        <div className="relative flex h-full w-full flex-col overflow-hidden bg-[#0B1F17] lg:h-[852px] lg:w-[395px] lg:shrink-0 lg:rounded-[46px] lg:border-[10px] lg:border-[#1C2E26] lg:shadow-phone">
+        <div className="relative flex h-full w-full flex-col overflow-hidden bg-bezel lg:h-[852px] lg:w-[395px] lg:shrink-0 lg:rounded-device lg:border-[10px] lg:border-bezel lg:shadow-panel">
           {/* iOS status bar (desktop frame only) */}
-          <div className="hidden shrink-0 items-center justify-between px-7 pb-1 pt-4 text-[11px] font-medium text-[#CFE8DC] lg:flex">
+          <div className="hidden shrink-0 items-center justify-between bg-surface px-7 pb-1 pt-4 text-aux font-medium text-muted lg:flex">
             <span className="tabular-nums">14:20</span>
             <span className="flex items-center gap-1.5">
-              <span className="text-[10px] font-semibold">5G</span>
+              <span className="text-aux font-semibold">5G</span>
               <Signal size={13} strokeWidth={2.5} />
               <Wifi size={13} strokeWidth={2.5} />
               <BatteryFull size={16} strokeWidth={2.2} />
@@ -3508,48 +3528,61 @@ export default function Page() {
           </div>
 
           <div
-            className="absolute left-1/2 top-[13px] z-30 hidden h-[27px] w-[112px] -translate-x-1/2 rounded-full bg-black ring-1 ring-white/5 lg:block"
+            className="absolute left-1/2 top-[13px] z-30 hidden h-[27px] w-[112px] -translate-x-1/2 rounded-full bg-black ring-1 ring-line/40 lg:block"
             aria-hidden="true"
           >
-            <span className="absolute right-[18px] top-1/2 h-[7px] w-[7px] -translate-y-1/2 rounded-full bg-[#0A1712] ring-1 ring-[#13241C]" />
+            <span className="absolute right-[18px] top-1/2 h-[7px] w-[7px] -translate-y-1/2 rounded-full bg-bezel ring-1 ring-line/40" />
           </div>
 
-          <header className="relative z-10 shrink-0 px-4 pb-3 pt-[max(14px,env(safe-area-inset-top))] lg:pt-1">
+          <header className="relative z-10 shrink-0 bg-surface px-4 pb-4 pt-[max(14px,env(safe-area-inset-top))] lg:pt-1">
             <div className="flex items-center justify-between gap-2 lg:pr-0">
-              <div className="flex min-w-0 items-center gap-2.5">
-                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#00A859] text-[#04130C]">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-control bg-brand text-brand-ink">
                   <ShieldCheck size={18} strokeWidth={2.3} />
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate text-[13px] font-semibold tracking-[-0.01em] text-[#E8F5EE]">
+                  <p className="truncate text-secondary font-semibold text-ink">
                     BCC Shield 360
                   </p>
-                  <p className="truncate text-[10px] text-[#7FA793]">
+                  <p className="truncate text-meta text-muted">
                     {t("bankName")}
                   </p>
                 </div>
               </div>
-              <div className="flex shrink-0 items-center gap-1.5">
+              <div className="flex shrink-0 items-center gap-1">
                 <button
                   type="button"
                   onClick={() => setJuryOpen(true)}
                   aria-label="Пульт жюри"
-                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-[#1E4233] bg-[#06110C]/70 text-[#34D399] transition-colors hover:text-[#A7F3D0] lg:hidden"
+                  className="grid h-11 w-11 shrink-0 place-items-center text-ink-soft transition-colors hover:text-accent lg:hidden"
                 >
-                  <Zap size={14} />
+                  <span
+                    aria-hidden="true"
+                    className="grid h-8 w-8 place-items-center rounded-control border border-line"
+                  >
+                    <Zap size={14} />
+                  </span>
                 </button>
                 <button
                   type="button"
                   aria-pressed={theme === "dark"}
                   aria-label={t(theme === "dark" ? "themeToLight" : "themeToDark")}
                   onClick={() => setTheme((v) => toggleTheme(v))}
-                  className="grid h-11 w-11 place-items-center"
+                  className="group grid h-11 w-11 shrink-0 place-items-center"
                 >
                   <span
                     aria-hidden="true"
-                    className="grid h-8 w-8 place-items-center rounded-control text-ink"
+                    className="grid h-8 w-8 place-items-center rounded-control text-ink transition-colors group-hover:bg-raised"
                   >
-                    {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+                    {/* Both icons stay mounted; data-theme decides which paints. */}
+                    <Moon
+                      size={16}
+                      className="col-start-1 row-start-1 [[data-theme=dark]_&]:hidden"
+                    />
+                    <Sun
+                      size={16}
+                      className="col-start-1 row-start-1 hidden [[data-theme=dark]_&]:block"
+                    />
                   </span>
                 </button>
                 <LangSwitch lang={lang} onChange={setLang} compact />
@@ -3558,10 +3591,10 @@ export default function Page() {
 
             <div className="mt-4 flex items-end justify-between gap-3">
               <div className="min-w-0">
-                <h1 className="truncate text-[22px] font-medium leading-tight tracking-[-0.02em]">
+                <h1 className="truncate font-display text-screen font-semibold text-ink">
                   {t(SCREEN_TITLE_KEY[tab])}
                 </h1>
-                <p className="mt-0.5 truncate text-[11px] text-[#7FA793]">
+                <p className="mt-1 truncate text-meta text-muted">
                   {t(SCREEN_SUBTITLE_KEY[tab])}
                 </p>
               </div>
@@ -3569,7 +3602,7 @@ export default function Page() {
             </div>
           </header>
 
-          <main className="bcc-scroll relative flex-1 overflow-y-auto overscroll-contain px-4 pb-28 pt-1 lg:pb-24">
+          <main className="bcc-scroll relative flex-1 overflow-y-auto overscroll-contain bg-surface px-4 pb-28 pt-1 lg:pb-24">
             {tab === "transfer" && (
               <section className="animate-fade-rise space-y-3 pb-2">
                 {unverifiedCallActive && (
@@ -4856,9 +4889,9 @@ export default function Page() {
 
           <nav
             aria-label="Основная навигация"
-            className="absolute inset-x-0 bottom-0 z-30 border-t border-[#1E4233] bg-[#0B1F17]/95 pb-[max(6px,env(safe-area-inset-bottom))] pt-1 backdrop-blur"
+            className="absolute inset-x-0 bottom-0 z-30 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)]"
           >
-            <div className="grid grid-cols-4">
+            <div className="grid h-14 grid-cols-4">
               {(
                 [
                   {
@@ -4891,55 +4924,61 @@ export default function Page() {
                     type="button"
                     onClick={() => setTab(item.id)}
                     aria-current={active ? "page" : undefined}
-                    className={`relative flex h-[54px] flex-col items-center justify-center gap-0.5 transition-colors ${
+                    className={`relative flex h-full flex-col items-center justify-center gap-0.5 transition-colors ${
                       active
-                        ? "text-[#6EE7B7]"
-                        : "text-[#648975] hover:text-[#A9CBB9]"
+                        ? "text-accent"
+                        : "text-muted hover:text-ink-soft"
                     }`}
                   >
+                    {active && (
+                      <span
+                        aria-hidden="true"
+                        className="absolute inset-x-0 top-0 h-0.5 bg-accent"
+                      />
+                    )}
                     <span
-                      className={`relative grid h-7 w-9 place-items-center rounded-lg transition-colors ${
-                        active ? "bg-[#00A859]/15" : "bg-transparent"
+                      className={`relative grid h-8 w-8 place-items-center rounded-control transition-colors ${
+                        active ? "bg-accent-soft" : "bg-transparent"
                       }`}
                     >
                       <Icon size={17} strokeWidth={active ? 2.3 : 1.9} />
                       {item.id === "guardpay" && pendingHolds.length > 0 && (
                         <span
                           aria-hidden="true"
-                          className="absolute -right-0.5 -top-0.5 grid h-3.5 min-w-3.5 place-items-center rounded-full bg-[#F59E0B] px-0.5 text-[7px] font-bold text-[#04130C]"
+                          className="absolute -right-1 -top-1 grid h-[18px] min-w-[18px] place-items-center rounded-full border border-warn/35 bg-warn-soft px-1 text-meta font-medium leading-none tabular-nums text-warn-ink"
                         >
                           {pendingHolds.length}
                         </span>
                       )}
                     </span>
-                    <span className="text-[8.5px] font-medium">
+                    <span className="text-meta font-medium">
                       {t(item.labelKey)}
                     </span>
                   </button>
                 );
               })}
             </div>
-            <div className="pointer-events-none mx-auto mb-1 mt-0.5 hidden h-1 w-28 rounded-full bg-white/20 lg:block" />
+            <div className="pointer-events-none absolute bottom-1 left-1/2 hidden h-1 w-28 -translate-x-1/2 rounded-full bg-line-strong lg:block" />
           </nav>
 
           {renderModal()}
         </div>
 
-        <aside className="hidden h-[852px] w-[480px] shrink-0 flex-col gap-3 lg:flex">
-          <div className="flex items-end justify-between gap-3 px-1">
+        <aside className="hidden h-[852px] w-[480px] shrink-0 flex-col gap-3 rounded-sheet border border-line bg-surface p-4 shadow-panel lg:flex">
+          <div className="flex items-end justify-between gap-3">
             <div>
-              <p className="text-[10px] text-[#7FA793]">
+              <p className="text-meta text-muted">
                 ITU Hackathon 2026 · BCC Bank
               </p>
-              <h2 className="mt-1 text-[18px] font-medium tracking-[-0.01em]">
+              <h2 className="mt-1 text-section font-sans font-semibold text-ink">
                 Пульт симуляции атак
               </h2>
             </div>
-            <span className="rounded-full border border-[#1E4233] bg-[#0B1F17] px-2.5 py-1 text-[9.5px] text-[#A9CBB9]">
+            <span className="rounded-full border border-line bg-raised px-3 py-1 text-meta text-ink-soft">
               Telemetry Deck
             </span>
           </div>
-          <div className="min-h-0 flex-1">
+          <div className="bcc-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain">
             <JuryPanel
               risk={risk}
               factors={factors}
