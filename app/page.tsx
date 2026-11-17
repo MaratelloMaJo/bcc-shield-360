@@ -722,7 +722,7 @@ const RISK_BADGE_TONE: Record<Decision, { badge: string; dot: string }> = {
     dot: "bg-warn",
   },
   GUARDIAN_APPROVAL: {
-    badge: "border-guardian/35 bg-guardian-soft text-guardian",
+    badge: "border-guardian/35 bg-guardian-soft text-guardian-ink",
     dot: "bg-guardian",
   },
   BLOCK: {
@@ -3515,7 +3515,9 @@ export default function Page() {
   return (
     <div className="h-[100dvh] w-full overflow-hidden bg-canvas text-ink lg:h-auto lg:min-h-[100dvh] lg:overflow-visible">
       <div className="h-full w-full lg:mx-auto lg:flex lg:min-h-[100dvh] lg:max-w-[1500px] lg:items-center lg:justify-center lg:gap-10 lg:px-8 lg:py-4">
-        <div className="relative flex h-full w-full flex-col overflow-hidden bg-bezel lg:h-[852px] lg:w-[395px] lg:shrink-0 lg:rounded-device lg:border-[10px] lg:border-bezel lg:shadow-panel">
+        {/* Spec (Phone chrome): "Outer hardware radius stays 46px";
+            inner device surfaces use rounded-device. */}
+        <div className="relative flex h-full w-full flex-col overflow-hidden bg-bezel lg:h-[852px] lg:w-[395px] lg:shrink-0 lg:rounded-[46px] lg:border-[10px] lg:border-bezel lg:shadow-panel">
           {/* iOS status bar (desktop frame only) */}
           <div className="hidden shrink-0 items-center justify-between bg-surface px-7 pb-1 pt-4 text-aux font-medium text-muted lg:flex">
             <span className="tabular-nums">14:20</span>
@@ -4889,9 +4891,9 @@ export default function Page() {
 
           <nav
             aria-label="Основная навигация"
-            className="absolute inset-x-0 bottom-0 z-30 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)]"
+            className="absolute inset-x-0 bottom-0 z-30 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] lg:h-14"
           >
-            <div className="grid h-14 grid-cols-4">
+            <div className="grid h-14 grid-cols-4 lg:h-full lg:pb-2">
               {(
                 [
                   {
@@ -4937,7 +4939,7 @@ export default function Page() {
                       />
                     )}
                     <span
-                      className={`relative grid h-8 w-8 place-items-center rounded-control transition-colors ${
+                      className={`relative grid h-8 w-8 place-items-center rounded-control transition-colors lg:h-7 lg:w-7 ${
                         active ? "bg-accent-soft" : "bg-transparent"
                       }`}
                     >
@@ -4958,7 +4960,8 @@ export default function Page() {
                 );
               })}
             </div>
-            <div className="pointer-events-none absolute bottom-1 left-1/2 hidden h-1 w-28 -translate-x-1/2 rounded-full bg-line-strong lg:block" />
+            {/* iOS gesture bar sits below the reserved strip, clear of the labels. */}
+            <div className="pointer-events-none absolute bottom-0 left-1/2 hidden h-1 w-28 -translate-x-1/2 rounded-full bg-line-strong lg:block" />
           </nav>
 
           {renderModal()}

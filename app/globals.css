@@ -19,7 +19,8 @@
   --bcc-warn-soft: 246 231 201;   --bcc-warn-ink: 122 71 8;
   --bcc-danger: 180 69 59;        --bcc-danger-soft: 244 223 218;
   --bcc-danger-ink: 142 47 39;    --bcc-guardian: 109 85 168;
-  --bcc-guardian-soft: 232 226 243; --bcc-paper: 243 237 221;
+  --bcc-guardian-soft: 232 226 243; --bcc-guardian-ink: 74 55 122;
+  --bcc-paper: 243 237 221;
   --bcc-overlay: 16 35 31;        --bcc-bezel: 24 32 28;
   --bcc-brand: 0 168 89;          --bcc-brand-ink: 6 17 12;
   --bcc-shadow-card: 0 1px 2px rgb(16 35 31 / .06), 0 8px 24px -12px rgb(16 35 31 / .18);
@@ -39,7 +40,8 @@
   --bcc-warn-soft: 58 44 21;      --bcc-warn-ink: 243 199 126;
   --bcc-danger: 229 104 92;       --bcc-danger-soft: 60 35 32;
   --bcc-danger-ink: 255 179 169;  --bcc-guardian: 167 139 224;
-  --bcc-guardian-soft: 43 35 64;  --bcc-paper: 27 39 33;
+  --bcc-guardian-soft: 43 35 64;  --bcc-guardian-ink: 200 182 240;
+  --bcc-paper: 27 39 33;
   --bcc-overlay: 5 10 8;          --bcc-bezel: 10 14 12;
   --bcc-brand: 0 168 89;          --bcc-brand-ink: 6 17 12;
   --bcc-shadow-card: 0 1px 0 rgb(255 255 255 / .04) inset, 0 12 32px -18px rgb(0 0 0 / .85);

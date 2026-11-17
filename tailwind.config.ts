@@ -33,6 +33,7 @@ const config: Config = {
         "danger-ink": "rgb(var(--bcc-danger-ink) / <alpha-value>)",
         guardian: "rgb(var(--bcc-guardian) / <alpha-value>)",
         "guardian-soft": "rgb(var(--bcc-guardian-soft) / <alpha-value>)",
+        "guardian-ink": "rgb(var(--bcc-guardian-ink) / <alpha-value>)",
         paper: "rgb(var(--bcc-paper) / <alpha-value>)",
         overlay: "rgb(var(--bcc-overlay) / <alpha-value>)",
         bezel: "rgb(var(--bcc-bezel) / <alpha-value>)",
