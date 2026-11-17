@@ -1320,13 +1320,13 @@ function QrGlyph({ seed }: { seed: string }) {
   const cells = useMemo(() => qrCells(seed), [seed]);
   return (
     <div
-      className="qr-grid grid h-[86px] w-[86px] grid-cols-[repeat(17,1fr)] gap-0 rounded-md bg-[#E8F5EE] p-1.5"
+      className="qr-grid grid h-[86px] w-[86px] grid-cols-[repeat(17,1fr)] gap-0 rounded-control bg-paper p-2"
       aria-hidden="true"
     >
       {cells.map((filled, index) => (
         <span
           key={index}
-          className={`aspect-square ${filled ? "bg-[#0B1F17]" : "bg-transparent"}`}
+          className={`aspect-square ${filled ? "bg-ink" : "bg-transparent"}`}
         />
       ))}
     </div>
@@ -1797,73 +1797,76 @@ function CryptoPassport({
 
   return (
     <div
-      className={`mx-3 mb-3 rounded-xl border ${
-        mismatch
-          ? "border-[#EF4444]/45 bg-[#EF4444]/8"
-          : "border-[#1E4233] bg-[#06110C]"
+      className={`mx-4 mb-4 rounded-card border bg-raised ${
+        mismatch ? "border-danger/35" : "border-line"
       }`}
     >
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
-        className="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left"
+        className="flex min-h-11 w-full items-center justify-between gap-2 px-3 py-3 text-left"
       >
-        <span className="flex min-w-0 items-center gap-1.5 text-[10px] font-medium text-[#A7F3D0]">
-          <Fingerprint size={12} className="shrink-0 text-[#34D399]" />
-          <span className="truncate">
+        <span className="flex min-w-0 items-center gap-1.5 text-body font-semibold leading-snug text-ink">
+          <Fingerprint
+            size={14}
+            className={`shrink-0 ${mismatch ? "text-danger-ink" : "text-accent"}`}
+          />
+          <span>
             {open ? t("passportClose") : t("passportOpen")}
           </span>
         </span>
         {open ? (
-          <ChevronUp size={13} className="shrink-0 text-[#7FA793]" />
+          <ChevronUp size={16} className="shrink-0 text-muted" />
         ) : (
-          <ChevronDown size={13} className="shrink-0 text-[#7FA793]" />
+          <ChevronDown size={16} className="shrink-0 text-muted" />
         )}
       </button>
 
       {open && (
-        <div className="border-t border-[#1E4233]/70 px-3 py-2.5">
-          <p className="text-[8px] font-medium uppercase tracking-[0.06em] text-[#648975]">
+        <div className="border-t border-line px-4 py-3">
+          <p className="text-meta font-medium text-ink-soft">
             {t("passportCanonical")}
           </p>
-          <p className="mt-1 break-all font-mono text-[8.5px] leading-snug text-[#CFE8DC]">
+          <p className="mt-1 break-all font-mono text-hash tabular-nums leading-snug text-ink-soft">
             TX_ID | TIMESTAMP | SENDER_PAN | RECEIVER_PAN | AMOUNT_KZT | BCC-2026
           </p>
-          <p className="mt-1 break-all rounded-md bg-[#0B1F17] px-2 py-1.5 font-mono text-[8px] leading-snug text-[#7FA793]">
+          <p className="mt-2 break-all rounded-control border border-line bg-surface px-3 py-2 font-mono text-hash tabular-nums leading-snug text-ink-soft">
             {actual?.canonical ?? "…"}
           </p>
 
-          <p className="mt-2.5 text-[8px] font-medium uppercase tracking-[0.06em] text-[#648975]">
+          <p className="mt-3 text-meta font-medium text-ink-soft">
             {t("passportAlgorithm")}
           </p>
-          <p className="mt-1 flex items-start gap-1.5 font-mono text-[8.5px] leading-snug text-[#A7F3D0]">
-            <BadgeCheck size={11} className="mt-0.5 shrink-0 text-[#34D399]" />
+          <p className="mt-1 flex items-start gap-1.5 font-mono text-hash leading-snug text-ink-soft">
+            <BadgeCheck size={14} className="mt-0.5 shrink-0 text-accent" />
             Web Crypto API (window.crypto.subtle.sign / HMAC-SHA256)
           </p>
 
-          <dl className="mt-2.5 space-y-1.5">
-            <div className="rounded-md border border-[#1E4233] bg-[#0B1F17] px-2 py-1.5">
-              <dt className="text-[8px] text-[#648975]">
+          <dl className="mt-3 space-y-2">
+            <div className="rounded-control border border-line bg-surface px-3 py-2">
+              <dt className="text-meta text-ink-soft">
                 {t("passportStored")}
               </dt>
-              <dd className="mt-0.5 break-all font-mono text-[9px] text-[#6EE7B7]">
+              <dd className="mt-1 break-all font-mono text-hash tabular-nums text-ink-soft">
                 {receipt.signature}
               </dd>
             </div>
             <div
-              className={`rounded-md border px-2 py-1.5 ${
+              className={`rounded-control border px-3 py-2 ${
                 mismatch
-                  ? "border-[#EF4444]/40 bg-[#EF4444]/10"
-                  : "border-[#1E4233] bg-[#0B1F17]"
+                  ? "border-danger/35 bg-danger-soft"
+                  : "border-line bg-surface"
               }`}
             >
-              <dt className="text-[8px] text-[#648975]">
+              <dt
+                className={`text-meta ${mismatch ? "text-danger-ink" : "text-ink-soft"}`}
+              >
                 {t("passportActual")}
               </dt>
               <dd
-                className={`mt-0.5 break-all font-mono text-[9px] ${
-                  mismatch ? "text-[#F87171]" : "text-[#6EE7B7]"
+                className={`mt-1 break-all font-mono text-hash tabular-nums ${
+                  mismatch ? "text-danger-ink" : "text-safe-ink"
                 }`}
               >
                 {computing
@@ -1874,10 +1877,10 @@ function CryptoPassport({
           </dl>
 
           <p
-            className={`mt-2 rounded-md px-2 py-1.5 text-[8.5px] font-medium leading-snug ${
+            className={`mt-3 rounded-control px-3 py-2 text-secondary font-medium leading-snug ${
               mismatch
-                ? "bg-[#EF4444]/10 text-[#FECACA]"
-                : "bg-[#10B981]/10 text-[#A7F3D0]"
+                ? "bg-danger-soft text-danger-ink"
+                : "bg-safe-soft text-safe-ink"
             }`}
           >
             {mismatch
@@ -1886,7 +1889,7 @@ function CryptoPassport({
           </p>
 
           {tampered && (
-            <p className="mt-1.5 font-mono text-[8px] text-[#B98D8D]">
+            <p className="mt-2 font-mono text-hash tabular-nums text-warn-ink">
               amount_kzt: {formatNumber(receipt.amount)} → {formatNumber(amount)}
             </p>
           )}
@@ -3901,22 +3904,22 @@ export default function Page() {
             {tab === "trustlens" && (
               <section className="animate-fade-rise space-y-3 pb-2">
                 <div
-                  className={`rounded-2xl border p-4 ${
+                  className={`rounded-card border bg-surface p-4 ${
                     unverifiedCallActive
-                      ? "border-[#EF4444]/45 bg-[#EF4444]/10"
+                      ? "border-danger/35"
                       : officialBccCallActive
-                        ? "border-[#10B981]/45 bg-[#10B981]/10"
-                        : "border-[#1E4233] bg-[#122B21]/45"
+                        ? "border-safe/35"
+                        : "border-line"
                   }`}
                 >
                   <div className="flex items-start gap-3">
                     <span
-                      className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl border ${
+                      className={`grid h-11 w-11 shrink-0 place-items-center rounded-control border ${
                         unverifiedCallActive
-                          ? "animate-radar-pulse border-[#EF4444]/50 bg-[#EF4444]/15 text-[#F87171]"
+                          ? "animate-radar-pulse border-danger/35 bg-danger-soft text-danger-ink"
                           : officialBccCallActive
-                            ? "border-[#10B981]/45 bg-[#10B981]/15 text-[#6EE7B7]"
-                            : "border-[#1E4233] bg-[#0B1F17] text-[#7FA793]"
+                            ? "border-safe/35 bg-safe-soft text-safe-ink"
+                            : "border-line bg-raised text-muted"
                       }`}
                     >
                       {unverifiedCallActive ? (
@@ -3928,17 +3931,17 @@ export default function Page() {
                       )}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <h2 className="text-[14px] font-medium">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <h2 className="text-section font-semibold text-ink">
                           {t("radarTitle")}
                         </h2>
                         <span
-                          className={`rounded-full border px-1.5 py-0.5 text-[8.5px] ${
+                          className={`rounded-full border px-2 py-1 text-meta font-medium ${
                             unverifiedCallActive
-                              ? "border-[#EF4444]/40 text-[#FCA5A5]"
+                              ? "border-danger/35 bg-danger-soft text-danger-ink"
                               : officialBccCallActive
-                                ? "border-[#10B981]/40 text-[#6EE7B7]"
-                                : "border-[#1E4233] text-[#7FA793]"
+                                ? "border-safe/35 bg-safe-soft text-safe-ink"
+                                : "border-line bg-raised text-ink-soft"
                           }`}
                         >
                           {unverifiedCallActive
@@ -3949,12 +3952,12 @@ export default function Page() {
                         </span>
                       </div>
                       <p
-                        className={`mt-1.5 text-[11px] leading-snug ${
+                        className={`mt-2 text-secondary leading-snug ${
                           unverifiedCallActive
-                            ? "text-[#FECACA]"
+                            ? "text-danger-ink"
                             : officialBccCallActive
-                              ? "text-[#A7F3D0]"
-                              : "text-[#A9CBB9]"
+                              ? "text-safe-ink"
+                              : "text-ink-soft"
                         }`}
                       >
                         {unverifiedCallActive
@@ -3967,60 +3970,60 @@ export default function Page() {
                   </div>
 
                   {officialBccCallActive && (
-                    <div className="mt-3 rounded-xl border border-[#10B981]/30 bg-[#06110C]/70 p-3">
-                      <p className="text-[9.5px] text-[#7FA793]">
+                    <div className="mt-3 rounded-control border border-line bg-raised p-4">
+                      <p className="text-meta text-muted">
                         {t("sessionWord")}
                       </p>
-                      <div className="mt-1 flex items-center justify-between gap-2">
-                        <span className="font-mono text-[19px] tracking-[0.06em] text-[#6EE7B7]">
+                      <div className="mt-2 flex items-center justify-between gap-3">
+                        <span className="font-sans text-modal font-semibold text-ink">
                           {sessionCode}
                         </span>
                         <button
                           type="button"
                           onClick={newSessionCode}
-                          className="inline-flex items-center gap-1 rounded-md border border-[#10B981]/30 bg-[#10B981]/10 px-2 py-1 text-[9.5px] text-[#6EE7B7] transition-colors hover:bg-[#10B981]/15"
+                          className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-control border border-line bg-surface px-3 text-meta font-medium text-ink transition-colors hover:border-line-strong"
                         >
-                          <RotateCcw size={10} />
+                          <RotateCcw size={14} />
                           {t("newWord")}
                         </button>
                       </div>
-                      <p className="mt-1.5 text-[9.5px] leading-snug text-[#7FA793]">
+                      <p className="mt-2 text-secondary leading-snug text-muted">
                         {t("sessionHint")}
                       </p>
                     </div>
                   )}
                 </div>
 
-                <div className="overflow-hidden rounded-2xl border border-[#1E4233] bg-[#122B21]/55">
-                  <div className="flex items-center justify-between gap-2 border-b border-[#1E4233]/70 px-4 py-3">
+                <div className="overflow-hidden rounded-card border border-line bg-surface">
+                  <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-3">
                     <div className="flex min-w-0 items-center gap-2">
-                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[#0B1F17] text-[#34D399]">
-                        <FileCheck2 size={15} />
+                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-control bg-accent-soft text-accent">
+                        <FileCheck2 size={16} />
                       </span>
                       <div className="min-w-0">
-                        <h2 className="text-[12.5px] font-medium">
+                        <h2 className="text-body font-semibold text-ink">
                           {t("receiptTitle")}
                         </h2>
-                        <p className="text-[9.5px] text-[#7FA793]">
+                        <p className="text-secondary text-muted">
                           {t("receiptSubtitle")}
                         </p>
                       </div>
                     </div>
-                    <span className="font-mono text-[8.5px] text-[#648975]">
+                    <span className="font-mono text-hash tabular-nums text-muted">
                       {latestReceipt ? "SEALED" : "SIGNING"}
                     </span>
                   </div>
 
                   {cryptoError ? (
                     <div className="p-4">
-                      <p className="flex items-start gap-2 text-[10.5px] leading-snug text-[#FCA5A5]">
-                        <AlertTriangle size={13} className="mt-0.5 shrink-0" />
+                      <p className="flex items-start gap-2 text-secondary leading-snug text-danger-ink">
+                        <AlertTriangle size={16} className="mt-0.5 shrink-0" />
                         {cryptoError}
                       </p>
                     </div>
                   ) : !latestReceipt || !displayedReceipt ? (
-                    <div className="flex items-center gap-2 p-5 text-[10.5px] text-[#7FA793]">
-                      <Loader2 size={14} className="animate-spin" />
+                    <div className="flex items-center gap-2 p-4 text-secondary text-muted">
+                      <Loader2 size={16} className="animate-spin" />
                       Формируем криптографическую подпись…
                     </div>
                   ) : (
@@ -4028,18 +4031,18 @@ export default function Page() {
                       <div className="p-4">
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
-                            <p className="text-[9.5px] text-[#7FA793]">
+                            <p className="text-meta text-muted">
                               {t("amountOnReceipt")}
                             </p>
                             <p
-                              className={`mt-1 whitespace-nowrap text-[24px] font-medium leading-none tabular-nums tracking-[-0.02em] ${
-                                tampered ? "text-[#FCA5A5]" : "text-[#E8F5EE]"
+                              className={`mt-1 whitespace-nowrap font-sans text-modal font-semibold tabular-nums ${
+                                tampered ? "text-danger-ink" : "text-ink"
                               }`}
                             >
                               {formatKzt(displayedReceipt.amount)}
                             </p>
                             {tampered && (
-                              <span className="mt-1.5 inline-flex rounded border border-[#F59E0B]/35 bg-[#F59E0B]/10 px-1.5 py-0.5 text-[8.5px] text-[#FCD34D]">
+                              <span className="mt-2 inline-flex rounded-full border border-warn/35 bg-warn-soft px-2 py-1 text-meta font-medium text-warn-ink">
                                 Изменено вне банка
                               </span>
                             )}
@@ -4047,47 +4050,47 @@ export default function Page() {
                           <QrGlyph seed={latestReceipt.signature} />
                         </div>
 
-                        <dl className="mt-4 grid grid-cols-2 gap-x-3 gap-y-2.5">
+                        <dl className="mt-4 grid grid-cols-2 gap-x-3 gap-y-3">
                           <div>
-                            <dt className="text-[8.5px] text-[#648975]">
+                            <dt className="text-meta text-muted">
                               {t("receiptOperation")}
                             </dt>
-                            <dd className="mt-0.5 break-all font-mono text-[9.5px] text-[#CFE8DC]">
+                            <dd className="mt-1 break-all font-mono text-hash tabular-nums text-ink-soft">
                               {displayedReceipt.id}
                             </dd>
                           </div>
                           <div>
-                            <dt className="text-[8.5px] text-[#648975]">
+                            <dt className="text-meta text-muted">
                               {t("receiptDate")}
                             </dt>
-                            <dd className="mt-0.5 text-[9.5px] text-[#CFE8DC]">
+                            <dd className="mt-1 text-body text-ink">
                               {formatDateTime(displayedReceipt.timestamp)}
                             </dd>
                           </div>
                           <div>
-                            <dt className="text-[8.5px] text-[#648975]">
+                            <dt className="text-meta text-muted">
                               {t("receiptSender")}
                             </dt>
-                            <dd className="mt-0.5 text-[9.5px] text-[#CFE8DC]">
+                            <dd className="mt-1 text-body text-ink">
                               {displayedReceipt.sender}
                             </dd>
                           </div>
                           <div>
-                            <dt className="text-[8.5px] text-[#648975]">
+                            <dt className="text-meta text-muted">
                               {t("receiptRecipient")}
                             </dt>
-                            <dd className="mt-0.5 text-[9.5px] text-[#CFE8DC]">
+                            <dd className="mt-1 text-body text-ink">
                               {displayedReceipt.recipient}
                             </dd>
                           </div>
                         </dl>
 
-                        <div className="mt-3 flex items-center justify-between gap-2 rounded-lg border border-[#34D399]/25 bg-[#06110C]/60 px-3 py-2">
+                        <div className="mt-4 flex items-center justify-between gap-2 rounded-control border border-line bg-raised px-3 py-2">
                           <div className="min-w-0">
-                            <p className="text-[8.5px] text-[#648975]">
+                            <p className="text-meta text-muted">
                               {t("signatureLabel")}
                             </p>
-                            <p className="mt-0.5 truncate font-mono text-[10.5px] text-[#6EE7B7]">
+                            <p className="mt-1 truncate font-mono text-hash tabular-nums text-ink">
                               {latestReceipt.signature}
                             </p>
                           </div>
@@ -4095,17 +4098,17 @@ export default function Page() {
                             type="button"
                             onClick={copySignature}
                             aria-label="Скопировать подпись чека"
-                            className="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-[#1E4233] text-[#7FA793] transition-colors hover:text-[#E8F5EE]"
+                            className="grid h-11 w-11 shrink-0 place-items-center rounded-control border border-line bg-surface text-muted transition-colors hover:border-line-strong hover:text-ink"
                           >
-                            <Copy size={12} />
+                            <Copy size={16} />
                           </button>
                         </div>
 
-                        <div className="mt-2 flex items-center justify-between gap-2">
-                          <span className="rotate-[-4deg] rounded-[3px] border border-[#34D399]/35 px-1.5 py-0.5 font-mono text-[7.5px] tracking-[0.13em] text-[#6EE7B7]/85">
+                        <div className="mt-3 flex items-center justify-between gap-2">
+                          <span className="rounded-control border border-line px-2 py-1 font-mono text-hash text-muted">
                             BCC CRYPTO SEAL
                           </span>
-                          <span className="font-mono text-[8px] text-[#648975]">
+                          <span className="font-mono text-hash text-muted">
                             SHA-256 / HMAC / KZ
                           </span>
                         </div>
@@ -4118,11 +4121,11 @@ export default function Page() {
                         lang={lang}
                       />
 
-                      <div className="space-y-2 border-t border-[#1E4233]/70 p-3">
+                      <div className="space-y-2 border-t border-line p-4">
                         <button
                           type="button"
                           onClick={toggleTamper}
-                          className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-[#F59E0B]/35 bg-[#F59E0B]/8 px-2 py-2.5 text-[10.5px] text-[#FCD34D] transition-colors hover:bg-[#F59E0B]/12"
+                          className="flex h-11 w-full items-center justify-center gap-1.5 rounded-control border border-warn/35 bg-warn-soft px-3 text-secondary font-medium text-warn-ink transition-colors hover:border-warn"
                         >
                           {t(tampered ? "tamperOff" : "tamperOn")}
                         </button>
@@ -4130,12 +4133,12 @@ export default function Page() {
                           type="button"
                           onClick={runReceiptVerification}
                           disabled={verifyLoading}
-                          className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-[#34D399]/40 bg-[#34D399]/10 px-2 py-2.5 text-[10.5px] font-medium text-[#A7F3D0] transition-colors hover:bg-[#34D399]/15 disabled:opacity-60"
+                          className="flex h-11 w-full items-center justify-center gap-1.5 rounded-control bg-accent px-3 text-body font-semibold text-accent-ink transition-colors hover:bg-accent-strong disabled:cursor-not-allowed disabled:bg-line disabled:text-muted"
                         >
                           {verifyLoading ? (
-                            <Loader2 size={13} className="animate-spin" />
+                            <Loader2 size={16} className="animate-spin" />
                           ) : (
-                            <Fingerprint size={13} />
+                            <Fingerprint size={16} />
                           )}
                           {verifyLoading
                             ? t("verifyRunning")
@@ -4145,37 +4148,43 @@ export default function Page() {
 
                       {verifyResult && (
                         <div
-                          className={`mx-3 mb-3 rounded-xl border p-3 ${
+                          className={`mx-4 mb-4 rounded-card border p-4 ${
                             verifyResult.isValid
-                              ? "border-[#10B981]/45 bg-[#10B981]/8"
-                              : "border-[#EF4444]/50 bg-[#EF4444]/10"
+                              ? "border-safe/35 bg-safe-soft"
+                              : "border-danger/35 bg-danger-soft"
                           }`}
                         >
                           <div className="flex items-start gap-2">
                             {verifyResult.isValid ? (
                               <CheckCircle2
-                                size={16}
-                                className="mt-0.5 shrink-0 text-[#6EE7B7]"
+                                size={18}
+                                className="mt-0.5 shrink-0 text-safe-ink"
                               />
                             ) : (
                               <XCircle
-                                size={16}
-                                className="mt-0.5 shrink-0 text-[#F87171]"
+                                size={18}
+                                className="mt-0.5 shrink-0 text-danger-ink"
                               />
                             )}
                             <div className="min-w-0">
                               <p
-                                className={`text-[11px] font-medium ${
+                                className={`text-body font-semibold ${
                                   verifyResult.isValid
-                                    ? "text-[#A7F3D0]"
-                                    : "text-[#FECACA]"
+                                    ? "text-safe-ink"
+                                    : "text-danger-ink"
                                 }`}
                               >
                                 {verifyResult.isValid
                                   ? "ЧЕК ПОДЛИННЫЙ"
                                   : "❌ ОБНАРУЖЕНА ПОДДЕЛКА"}
                               </p>
-                              <p className="mt-0.5 text-[9.5px] leading-snug text-[#A9CBB9]">
+                              <p
+                                className={`mt-1 text-secondary leading-snug ${
+                                  verifyResult.isValid
+                                    ? "text-safe-ink"
+                                    : "text-danger-ink"
+                                }`}
+                              >
                                 {verifyResult.isValid
                                   ? "Цифровая подпись АО «Банк ЦентрКредит» совпала."
                                   : "Данные суммы были изменены после выпуска чека."}
@@ -4183,23 +4192,49 @@ export default function Page() {
                             </div>
                           </div>
 
-                          <dl className="mt-3 space-y-1.5 font-mono text-[9px]">
+                          <dl className="mt-3 space-y-2 font-mono text-hash tabular-nums">
                             <div className="flex items-start justify-between gap-2">
-                              <dt className="text-[#648975]">
+                              <dt
+                                className={
+                                  verifyResult.isValid
+                                    ? "text-safe-ink"
+                                    : "text-danger-ink"
+                                }
+                              >
                                 Подпись в чеке
                               </dt>
-                              <dd className="text-right text-[#CFE8DC]">
+                              <dd
+                                className={`text-right font-medium ${
+                                  verifyResult.isValid
+                                    ? "text-safe-ink"
+                                    : "text-danger-ink"
+                                }`}
+                              >
                                 {verifyResult.stored}
                               </dd>
                             </div>
                             <div className="flex items-start justify-between gap-2">
-                              <dt className="text-[#648975]">Пересчитано</dt>
-                              <dd className="text-right text-[#CFE8DC]">
+                              <dt
+                                className={
+                                  verifyResult.isValid
+                                    ? "text-safe-ink"
+                                    : "text-danger-ink"
+                                }
+                              >
+                                Пересчитано
+                              </dt>
+                              <dd
+                                className={`text-right font-medium ${
+                                  verifyResult.isValid
+                                    ? "text-safe-ink"
+                                    : "text-danger-ink"
+                                }`}
+                              >
                                 {verifyResult.computed}
                               </dd>
                             </div>
                           </dl>
-                          <p className="mt-2 break-all rounded-md bg-[#06110C]/60 px-2 py-1.5 font-mono text-[8px] leading-snug text-[#648975]">
+                          <p className="mt-3 break-all rounded-control border border-line bg-raised px-3 py-2 font-mono text-hash tabular-nums leading-snug text-muted">
                             {verifyResult.canonical}
                           </p>
                         </div>
