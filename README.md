@@ -24,7 +24,7 @@ ITU Hackathon 2026 · BCC Bank.
 | **On-Device PII Scrubber** | ИИН (12 цифр) и PAN карты (16 цифр) маскируются на устройстве до отправки в ИИ: `[ИИН СКРЫТ ЗАЩИТОЙ ПДн РК]`, `[КАРТА СКРЫТА]`. |
 | **NBRK Antifraud Report** | JSON-пакет `NBRK-ANTIFRAUD-EXCHANGE-V2` для Антифрод-центра Нацбанка РК: `reportId`, `bankBic: KCJBKZKX`, `suspectPan`, `victimProfile`, `riskScore`, `synergyBoostTriggered`, `telemetryFlags`, `resolution: PREVENTED_BY_BCC_SHIELD_360`. |
 | **RU / ҚАЗ** | Типизированный словарь `DICT` для навигации, статусов риска, баннеров, кнопок и карточек; выбор языка сохраняется между сессиями. |
-| **PWA** | `app/manifest.ts`: `display: "standalone"`, `theme_color #00A859`, `background_color #0B1F17` — приложение открывается с домашнего экрана без адресной строки. |
+| **PWA** | `app/manifest.ts`: `display: "standalone"` — приложение открывается с домашнего экрана без адресной строки. |
 
 ### Формула риска
 
@@ -61,6 +61,32 @@ signature = "BCC-" + первые 16 hex-символов, разбитые по
 хеш пересчитывается и окрашивается в алый цвет, а паспорт выводит сообщение о
 лавинном эффекте SHA-256. Кнопка «Вернуть оригинальную сумму» восстанавливает
 исходный чек.
+
+---
+
+## Визуальная система
+
+Интерфейс собран на одной семантической палитре и живёт в двух темах.
+Светлая включена по умолчанию, тёмная переключается кнопкой в шапке. Выбор
+хранится в `localStorage` под ключом `bcc_shield_360_theme_v1` (`light` |
+`dark`) и применяется до первой отрисовки — перезагрузка не мигает.
+
+- **Токены.** `app/globals.css` объявляет RGB-каналы, `tailwind.config.ts`
+  превращает их в роли: `canvas`, `surface`, `raised`, `line`, `line-strong`,
+  `ink`, `ink-soft`, `muted`, `accent`, `accent-strong`, `accent-soft`,
+  `accent-ink`, `safe`, `warn`, `danger`, `guardian` (у статусов есть `-soft` и
+  `-ink`), `paper`, `overlay`, `bezel`, `brand`. Компоненты не содержат
+  hex-кодов; текст на `*-soft` набирается токеном `*-ink`.
+- **Шрифты.** Golos Text — интерфейс и цифры; Literata — только заголовки
+  экранов и модалок плюс итоговый балл жюри; Spline Sans Mono — латинские хеши
+  и чеки. Кириллица никогда не набирается моноширинным. Шрифты подключены через
+  `next/font` и собираются в бандл: в рантайме запросов к Google Fonts нет.
+- **Типографика.** 12 px — нижняя граница для смыслового текста, 11 px
+  (`text-aux`) — только метки времени. Без uppercase и трекинга; Literata
+  остаётся акцентом, а не основным шрифтом.
+- **Ритм и движение.** Радиусы 10 / 14 / 18 / 22 / pill, отступы по шкале
+  4 px, цели нажатия не меньше 44 px, анимации не дольше 280 ms. Брендовый
+  зелёный живёт только в логотипе и иконке.
 
 ---
 
@@ -167,9 +193,9 @@ OPENAI_API_KEY=sk-...
 ```
 app/
   api/scam-analyze/route.ts   # гибридный LLM + детерминированный анализ, PII-safe
-  globals.css                 # слои Tailwind, анимации, подсветка триггеров
-  layout.tsx                  # metadata, viewport, manifest, Inter
-  manifest.ts                 # PWA: standalone, theme #00A859, background #0B1F17
+  globals.css                 # слои Tailwind, токены тем, подсветка триггеров
+  layout.tsx                  # metadata, viewport, manifest, next/font
+  manifest.ts                 # PWA: standalone, иконки
   page.tsx                    # риск-движок, крипто, 4 экрана, i18n, пульт жюри
 lib/
   scam-engine.ts              # PII-скраббер, матрица паттернов РК, общая для сервера и клиента

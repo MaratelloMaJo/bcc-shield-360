@@ -39,22 +39,6 @@ const config: Config = {
         bezel: "rgb(var(--bcc-bezel) / <alpha-value>)",
         brand: "rgb(var(--bcc-brand) / <alpha-value>)",
         "brand-ink": "rgb(var(--bcc-brand-ink) / <alpha-value>)",
-        /* Legacy palette: screens still reference it until Task 8 removes it. */
-        bcc: {
-          page: "#06110C",
-          forest: "#0B1F17",
-          surface: "#122B21",
-          raised: "#163527",
-          line: "#1E4233",
-          green: "#00A859",
-          mint: "#34D399",
-          text: "#E8F5EE",
-          muted: "#7FA793",
-          safe: "#10B981",
-          warn: "#F59E0B",
-          guardian: "#8B5CF6",
-          danger: "#EF4444",
-        },
       },
       fontFamily: {
         sans: ["var(--font-golos)", "system-ui", "sans-serif"],
@@ -80,8 +64,6 @@ const config: Config = {
         device: "22px",
       },
       boxShadow: {
-        phone:
-          "0 50px 140px -40px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(255, 255, 255, 0.035) inset",
         card: "var(--bcc-shadow-card)",
         panel: "var(--bcc-shadow-panel)",
       },
@@ -95,9 +77,9 @@ const config: Config = {
           "100%": { transform: "translateY(0)" },
         },
         "radar-pulse": {
-          "0%": { boxShadow: "0 0 0 0 rgba(239, 68, 68, 0.45)" },
-          "70%": { boxShadow: "0 0 0 14px rgba(239, 68, 68, 0)" },
-          "100%": { boxShadow: "0 0 0 0 rgba(239, 68, 68, 0)" },
+          "0%": { boxShadow: "0 0 0 0 rgb(var(--bcc-danger) / 0.45)" },
+          "70%": { boxShadow: "0 0 0 14px rgb(var(--bcc-danger) / 0)" },
+          "100%": { boxShadow: "0 0 0 0 rgb(var(--bcc-danger) / 0)" },
         },
         "live-pulse": {
           "0%, 100%": { opacity: "1" },

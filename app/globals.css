@@ -105,14 +105,6 @@ textarea {
   background: rgb(var(--bcc-muted) / 0.7);
 }
 
-.bcc-scroll-quiet {
-  scrollbar-width: none;
-}
-
-.bcc-scroll-quiet::-webkit-scrollbar {
-  display: none;
-}
-
 /* Real input affordances: no iOS zoom on focus, no spinner clutter. */
 input,
 textarea {
@@ -137,7 +129,8 @@ textarea::placeholder {
   outline-offset: 2px;
 }
 
-/* Phishing / scam trigger marks inside analyzed text. */
+/* Phishing / scam trigger marks inside analyzed text. The tint alone is too
+ * close to `paper` in light mode, so a solid 2px underline carries the mark. */
 .scam-mark {
   border-radius: 4px;
   padding: 1px 3px;
@@ -148,33 +141,30 @@ textarea::placeholder {
 .scam-mark-critical {
   background: rgb(var(--bcc-danger-soft));
   color: rgb(var(--bcc-danger-ink));
-  box-shadow: inset 0 -1px 0 rgb(var(--bcc-danger) / 0.55);
+  box-shadow: inset 0 -2px 0 rgb(var(--bcc-danger));
 }
 
 .scam-mark-high {
   background: rgb(var(--bcc-warn-soft));
   color: rgb(var(--bcc-warn-ink));
-  box-shadow: inset 0 -1px 0 rgb(var(--bcc-warn) / 0.5);
+  box-shadow: inset 0 -2px 0 rgb(var(--bcc-warn));
 }
 
 .scam-mark-medium {
   background: rgb(var(--bcc-accent-soft));
   color: rgb(var(--bcc-accent-strong));
-  box-shadow: inset 0 -1px 0 rgb(var(--bcc-accent) / 0.4);
+  box-shadow: inset 0 -2px 0 rgb(var(--bcc-accent));
+}
+
+.scam-mark-safe {
+  background: rgb(var(--bcc-safe-soft));
+  color: rgb(var(--bcc-safe-ink));
+  box-shadow: inset 0 -2px 0 rgb(var(--bcc-safe));
 }
 
 /* CSS-only checkerboard used to make the receipt QR feel like a print artifact. */
 .qr-grid {
   image-rendering: pixelated;
-}
-
-/* Hide scrollbars on the horizontal quick-action rails without losing keyboard scroll. */
-.rail {
-  scrollbar-width: none;
-}
-
-.rail::-webkit-scrollbar {
-  display: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

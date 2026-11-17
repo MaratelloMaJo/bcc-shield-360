@@ -240,7 +240,6 @@ const RU_DICT = {
   screenGuardpaySubtitle: "Семейный мультисиг и антифишинг",
   screenScannerTitle: "AI Scam-Scanner",
   screenScannerSubtitle: "Разбор текста на приемы социальной инженерии",
-  protectionOn: "Защита включена",
   bankName: "Банк ЦентрКредит",
   riskAllow: "Безопасно",
   riskCoolDown: "Период охлаждения",
@@ -365,7 +364,6 @@ const KK_DICT: Record<DictKey, string> = {
   screenGuardpaySubtitle: "Отбасылық мультисиг және антифишинг",
   screenScannerTitle: "AI Сканер",
   screenScannerSubtitle: "Мәтінді әлеуметтік инженерия әдістеріне талдау",
-  protectionOn: "Қорғаныс қосылған",
   bankName: "Банк ЦентрКредит",
   riskAllow: "Қауіпсіз",
   riskCoolDown: "Салқындату кезеңі",
@@ -710,16 +708,21 @@ const DECISION_TONE: Record<
   },
 };
 
-const SEVERITY_CLASS: Record<ScamSeverity, string> = {
-  critical: "scam-mark scam-mark-critical",
-  high: "scam-mark scam-mark-high",
-  medium: "scam-mark scam-mark-medium",
-};
-
-const SEVERITY_LABEL_CLASS: Record<ScamSeverity, string> = {
-  critical: "border-danger/35 bg-danger-soft text-danger-ink",
-  high: "border-warn/35 bg-warn-soft text-warn-ink",
-  medium: "border-accent/30 bg-accent-soft text-accent-strong",
+/* Severity owns both halves of a trigger's look: the inline mark tint and the
+ * label card that explains it. One map keeps them from drifting apart. */
+const SEVERITY_TONE: Record<ScamSeverity, { mark: string; label: string }> = {
+  critical: {
+    mark: "scam-mark scam-mark-critical",
+    label: "border-danger/35 bg-danger-soft text-danger-ink",
+  },
+  high: {
+    mark: "scam-mark scam-mark-high",
+    label: "border-warn/35 bg-warn-soft text-warn-ink",
+  },
+  medium: {
+    mark: "scam-mark scam-mark-medium",
+    label: "border-accent/30 bg-accent-soft text-accent-strong",
+  },
 };
 
 /* -------------------------------------------------------------------------- */
@@ -1208,7 +1211,7 @@ function Toggle({
       >
         <span
           className={`h-5 w-5 rounded-full transition-transform duration-200 ${
-            checked ? "translate-x-5 bg-surface" : "translate-x-0 bg-muted"
+            checked ? "translate-x-[18px] bg-surface" : "translate-x-0 bg-muted"
           }`}
         />
       </span>
@@ -1419,19 +1422,19 @@ const STREAM_TONE: Record<
   { badge: string; mark: string; dot: string }
 > = {
   danger: {
-    badge: "border-[#EF4444]/40 bg-[#EF4444]/10 text-[#FCA5A5]",
-    mark: "bg-[#EF4444]/25 text-[#FECACA]",
-    dot: "bg-[#EF4444]",
+    badge: "border-danger/35 bg-danger-soft text-danger-ink",
+    mark: "scam-mark scam-mark-critical",
+    dot: "bg-danger",
   },
   warn: {
-    badge: "border-[#F59E0B]/40 bg-[#F59E0B]/10 text-[#FCD34D]",
-    mark: "bg-[#F59E0B]/25 text-[#FDE68A]",
-    dot: "bg-[#F59E0B]",
+    badge: "border-warn/35 bg-warn-soft text-warn-ink",
+    mark: "scam-mark scam-mark-high",
+    dot: "bg-warn",
   },
   success: {
-    badge: "border-[#10B981]/40 bg-[#10B981]/10 text-[#6EE7B7]",
-    mark: "bg-[#10B981]/25 text-[#A7F3D0]",
-    dot: "bg-[#10B981]",
+    badge: "border-safe/35 bg-safe-soft text-safe-ink",
+    mark: "scam-mark scam-mark-safe",
+    dot: "bg-safe",
   },
 };
 
@@ -1485,59 +1488,53 @@ function LiveCallStream({
 
   return (
     <div
-      className={`rounded-2xl border p-3 ${
-        scam
-          ? "border-[#EF4444]/40 bg-[#EF4444]/8"
-          : "border-[#10B981]/40 bg-[#10B981]/8"
+      className={`rounded-card border p-3 ${
+        scam ? "border-danger/35 bg-danger-soft" : "border-safe/35 bg-safe-soft"
       }`}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 items-start gap-2">
           <span
-            className={`mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-lg ${
-              scam
-                ? "bg-[#EF4444]/15 text-[#F87171]"
-                : "bg-[#10B981]/15 text-[#6EE7B7]"
+            className={`grid h-8 w-8 shrink-0 place-items-center rounded-control border bg-surface ${
+              scam ? "border-danger/35 text-danger" : "border-safe/35 text-safe"
             }`}
           >
-            <Mic size={13} />
+            <Mic size={14} />
           </span>
           <div className="min-w-0">
-            <p className="text-[10.5px] font-medium leading-tight text-[#E8F5EE]">
+            <p className="text-secondary font-semibold leading-snug text-ink">
               {t("liveTitle")}
             </p>
-            <p className="mt-0.5 text-[8.5px] leading-snug text-[#7FA793]">
+            <p className="mt-1 text-meta leading-snug text-ink-soft">
               {t("liveHint")}
             </p>
           </div>
         </div>
         <span
-          className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-1.5 py-0.5 font-mono text-[7.5px] ${
-            scam
-              ? "border-[#EF4444]/40 text-[#FCA5A5]"
-              : "border-[#10B981]/40 text-[#6EE7B7]"
+          className={`inline-flex shrink-0 items-center gap-1 rounded-full border bg-surface px-2 py-0.5 text-meta font-medium ${
+            scam ? "border-danger/35 text-danger-ink" : "border-safe/35 text-safe-ink"
           }`}
         >
           <span
-            className={`h-1 w-1 animate-live-pulse rounded-full ${
-              scam ? "bg-[#EF4444]" : "bg-[#10B981]"
+            className={`h-1.5 w-1.5 animate-live-pulse rounded-full ${
+              scam ? "bg-danger" : "bg-safe"
             }`}
           />
           REC
         </span>
       </div>
 
-      <div className="mt-2 flex items-center gap-2">
+      <div className="mt-3 flex items-center gap-2">
         <div
-          className={`flex h-4 items-end gap-[2px] ${
-            scam ? "text-[#F87171]" : "text-[#6EE7B7]"
+          className={`flex h-4 items-end gap-0.5 ${
+            scam ? "text-danger" : "text-safe"
           }`}
           aria-hidden="true"
         >
           {[6, 11, 8, 14, 9, 5, 12].map((height, index) => (
             <span
               key={index}
-              className="w-[2px] animate-live-pulse rounded-full bg-current"
+              className="w-0.5 animate-live-pulse rounded-full bg-current"
               style={{
                 height,
                 animationDelay: `${index * 120}ms`,
@@ -1545,12 +1542,12 @@ function LiveCallStream({
             />
           ))}
         </div>
-        <span className="truncate font-mono text-[8px] uppercase tracking-[0.08em] text-[#7FA793]">
+        <span className="min-w-0 truncate text-meta text-ink-soft">
           {scam ? t("liveScamLabel") : t("liveOfficialLabel")}
         </span>
       </div>
 
-      <ol className="mt-2 space-y-1.5" aria-live="polite">
+      <ol className="mt-3 space-y-2" aria-live="polite">
         {lines.slice(0, visible).map((line) => {
           const tone = STREAM_TONE[line.tone];
           const matchIndex = line.text.indexOf(line.highlight);
@@ -1564,27 +1561,25 @@ function LiveCallStream({
           return (
             <li
               key={`${line.time}-${line.badge}`}
-              className="animate-fade-rise rounded-lg border border-[#1E4233]/70 bg-[#06110C]/70 px-2 py-1.5"
+              className="animate-fade-rise rounded-control border border-line bg-surface px-3 py-2"
             >
-              <div className="flex items-start gap-1.5">
-                <span className={`mt-[5px] h-1 w-1 shrink-0 rounded-full ${tone.dot}`} />
+              <div className="flex items-start gap-2">
+                <span className={`mt-1.5 h-1 w-1 shrink-0 rounded-full ${tone.dot}`} />
                 <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-1">
-                    <span className="font-mono text-[8px] text-[#648975]">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-mono text-aux text-muted">
                       [{line.time}]
                     </span>
                     <span
-                      className={`rounded border px-1 py-0.5 text-[7.5px] ${tone.badge}`}
+                      className={`whitespace-nowrap rounded-full border px-1.5 py-0.5 text-meta font-medium ${tone.badge}`}
                     >
                       [{line.badge}]
                     </span>
                   </div>
-                  <p className="mt-0.5 text-[9.5px] leading-snug text-[#CFE8DC]">
+                  <p className="mt-1 text-secondary leading-snug text-ink-soft">
                     {before}
                     {matched && (
-                      <mark className={`rounded px-0.5 ${tone.mark}`}>
-                        {matched}
-                      </mark>
+                      <mark className={tone.mark}>{matched}</mark>
                     )}
                     {after}
                   </p>
@@ -1991,7 +1986,7 @@ function NbrkReportDialog({
             <FileJson size={14} />
             JSON · NBRK-ANTIFRAUD-EXCHANGE-V2
           </p>
-          <pre className="bcc-scroll mt-2 max-h-44 overflow-auto rounded-card border border-line bg-raised p-3 font-sans text-hash font-medium leading-relaxed text-ink-soft">
+          <pre className="bcc-scroll mt-2 max-h-44 overflow-auto whitespace-pre-wrap break-words rounded-card border border-line bg-raised p-3 font-sans text-hash font-medium leading-relaxed text-ink-soft">
             {json}
           </pre>
 
@@ -2106,7 +2101,7 @@ function JuryToggleRow({
         <p className="text-body font-semibold leading-snug text-ink">
           {label}
         </p>
-        <p className="mt-1 text-meta leading-snug text-ink-soft">{hint}</p>
+        <p className="mt-1 text-secondary leading-snug text-ink-soft">{hint}</p>
       </div>
       <Toggle checked={checked} onChange={onChange} label={label} />
     </div>
@@ -2428,7 +2423,6 @@ export default function Page() {
 
   const risk = useMemo(() => computeRisk(factors, lang), [factors, lang]);
   const activeBalance = role === "protected" ? familyBalance : balance;
-  const decisionMeta = DECISION_META[risk.decision];
   const pendingHolds = holds.filter((hold) => hold.status === "pending");
 
   const displayedReceipt = useMemo<SignedReceipt | null>(() => {
@@ -4771,7 +4765,7 @@ export default function Page() {
                               className={`mt-1 font-sans text-score font-semibold leading-none tabular-nums ${tone.text}`}
                             >
                               {scamResult.score}
-                              <span className="ml-1 align-baseline font-sans text-body font-normal text-muted">
+                              <span className="ml-1 align-baseline text-body font-normal text-muted">
                                 %
                               </span>
                             </p>
@@ -4824,9 +4818,9 @@ export default function Page() {
                                     <mark
                                       key={`${segment.trigger.patternId}-${index}`}
                                       className={
-                                        SEVERITY_CLASS[
+                                        SEVERITY_TONE[
                                           segment.trigger.severity
-                                        ]
+                                        ].mark
                                       }
                                       title={`${segment.trigger.label}: ${segment.trigger.explanation}`}
                                     >
@@ -4864,7 +4858,7 @@ export default function Page() {
                             {uniqueTriggers.map((trigger, index) => (
                               <div
                                 key={`${trigger.patternId}-${index}`}
-                                className={`rounded-control border px-3 py-2 ${SEVERITY_LABEL_CLASS[trigger.severity]}`}
+                                className={`rounded-control border px-3 py-2 ${SEVERITY_TONE[trigger.severity].label}`}
                               >
                                 <div className="flex items-start justify-between gap-2">
                                   <p className="text-secondary font-semibold">
