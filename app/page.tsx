@@ -672,62 +672,41 @@ const PHISH_PRESETS: PhishAnalysis[] = [
   },
 ];
 
-const DECISION_META: Record<
-  Decision,
-  {
-    label: string;
-    ru: string;
-    hex: string;
-    badgeClass: string;
-    dotClass: string;
-  }
-> = {
-  ALLOW: {
-    label: "ALLOW",
-    ru: "Разрешено",
-    hex: "#10B981",
-    badgeClass: "border-[#10B981]/40 bg-[#10B981]/10 text-[#6EE7B7]",
-    dotClass: "bg-[#10B981]",
-  },
-  COOL_DOWN: {
-    label: "COOL_DOWN",
-    ru: "Период охлаждения",
-    hex: "#F59E0B",
-    badgeClass: "border-[#F59E0B]/40 bg-[#F59E0B]/10 text-[#FCD34D]",
-    dotClass: "bg-[#F59E0B]",
-  },
-  GUARDIAN_APPROVAL: {
-    label: "GUARDIAN_APPROVAL",
-    ru: "Нужен Хранитель",
-    hex: "#8B5CF6",
-    badgeClass: "border-[#8B5CF6]/40 bg-[#8B5CF6]/10 text-[#C4B5FD]",
-    dotClass: "bg-[#8B5CF6]",
-  },
-  BLOCK: {
-    label: "BLOCK",
-    ru: "Блокировка",
-    hex: "#EF4444",
-    badgeClass: "border-[#EF4444]/45 bg-[#EF4444]/10 text-[#FCA5A5]",
-    dotClass: "bg-[#EF4444]",
-  },
+const DECISION_META: Record<Decision, { label: string; ru: string }> = {
+  ALLOW: { label: "ALLOW", ru: "Разрешено" },
+  COOL_DOWN: { label: "COOL_DOWN", ru: "Период охлаждения" },
+  GUARDIAN_APPROVAL: { label: "GUARDIAN_APPROVAL", ru: "Нужен Хранитель" },
+  BLOCK: { label: "BLOCK", ru: "Блокировка" },
 };
 
-const RISK_BADGE_TONE: Record<Decision, { badge: string; dot: string }> = {
+/* One tone map for every decision surface: badge, dot, jury score, risk bar. */
+const DECISION_TONE: Record<
+  Decision,
+  { badge: string; dot: string; text: string; bar: string }
+> = {
   ALLOW: {
     badge: "border-safe/35 bg-safe-soft text-safe-ink",
     dot: "bg-safe",
+    text: "text-safe-ink",
+    bar: "bg-safe",
   },
   COOL_DOWN: {
     badge: "border-warn/35 bg-warn-soft text-warn-ink",
     dot: "bg-warn",
+    text: "text-warn-ink",
+    bar: "bg-warn",
   },
   GUARDIAN_APPROVAL: {
     badge: "border-guardian/35 bg-guardian-soft text-guardian-ink",
     dot: "bg-guardian",
+    text: "text-guardian-ink",
+    bar: "bg-guardian",
   },
   BLOCK: {
     badge: "border-danger/35 bg-danger-soft text-danger-ink",
     dot: "bg-danger",
+    text: "text-danger-ink",
+    bar: "bg-danger",
   },
 };
 
@@ -1188,7 +1167,7 @@ function RiskBadge({
   withLabel?: boolean;
 }) {
   const meta = DECISION_META[decision];
-  const tone = RISK_BADGE_TONE[decision];
+  const tone = DECISION_TONE[decision];
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-meta font-semibold tabular-nums ${tone.badge}`}
@@ -1217,42 +1196,44 @@ function Toggle({
       aria-checked={checked}
       aria-label={label}
       onClick={onChange}
-      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border p-[2px] transition-colors ${
-        checked
-          ? "border-[#00A859] bg-[#00A859]"
-          : "border-[#1E4233] bg-[#0B1F17]"
-      }`}
+      className="inline-flex h-11 w-11 shrink-0 items-center justify-center"
     >
       <span
-        className={`h-[18px] w-[18px] rounded-full bg-white shadow-sm transition-transform duration-200 ${
-          checked ? "translate-x-[20px]" : "translate-x-0"
+        aria-hidden="true"
+        className={`inline-flex h-6 w-11 items-center rounded-full border p-0.5 transition-colors ${
+          checked
+            ? "border-accent bg-accent"
+            : "border-line-strong bg-surface"
         }`}
-      />
+      >
+        <span
+          className={`h-5 w-5 rounded-full transition-transform duration-200 ${
+            checked ? "translate-x-5 bg-surface" : "translate-x-0 bg-muted"
+          }`}
+        />
+      </span>
     </button>
   );
 }
 
 function RiskScale({ risk }: { risk: RiskResult }) {
-  const meta = DECISION_META[risk.decision];
+  const tone = DECISION_TONE[risk.decision];
   return (
     <div className="mt-3">
-      <div className="relative h-2.5 overflow-hidden rounded-full border border-[#1E4233] bg-[#06110C]">
+      <div className="relative h-2.5 overflow-hidden rounded-full border border-line bg-surface">
         <div
-          className="h-full w-full origin-left rounded-full transition-transform duration-500"
-          style={{
-            backgroundColor: meta.hex,
-            transform: `scaleX(${risk.score / 100})`,
-          }}
+          className={`h-full w-full origin-left rounded-full transition-transform duration-200 ${tone.bar}`}
+          style={{ transform: `scaleX(${risk.score / 100})` }}
         />
         {[30, 60, 85].map((tick) => (
           <span
             key={tick}
-            className="absolute top-0 h-full w-px bg-white/20"
+            className="absolute top-0 h-full w-px bg-line-strong"
             style={{ left: `${tick}%` }}
           />
         ))}
       </div>
-      <div className="mt-1 flex justify-between font-mono text-[9px] text-[#648975]">
+      <div className="mt-1 flex justify-between text-meta tabular-nums text-muted">
         <span>0</span>
         <span>30</span>
         <span>60</span>
@@ -1350,7 +1331,7 @@ function LangSwitch({
     <div
       role="group"
       aria-label="Язык интерфейса / Интерфейс тілі"
-      className="inline-flex h-11 shrink-0 items-center rounded-full bg-surface ring-1 ring-line"
+      className="inline-flex h-11 shrink-0 items-center rounded-full bg-raised ring-1 ring-line"
     >
       {(["ru", "kk"] as const).map((option) => {
         const active = lang === option;
@@ -1646,54 +1627,54 @@ function CooldownDialog({
   const kk = lang === "kk";
 
   return (
-    <div className="absolute inset-0 z-50 overflow-y-auto bg-[#020806]/80 backdrop-blur-sm">
-      <div className="flex min-h-full items-center justify-center p-4">
+    <div className="absolute inset-0 z-50 overflow-y-auto bg-overlay/45 backdrop-blur-sm [[data-theme=dark]_&]:bg-overlay/70">
+      <div className="flex min-h-full items-start justify-center p-4">
         <div
           role="dialog"
           aria-modal="true"
           aria-label="Период охлаждения BCC SafeCall"
-          className="w-full max-w-[332px] animate-fade-rise rounded-2xl border border-[#F59E0B]/40 bg-[#0B1F17] p-5 shadow-panel"
+          className="my-auto w-full max-w-[332px] animate-fade-rise rounded-sheet border border-line bg-surface p-5 text-ink shadow-panel"
         >
-          <div className="flex items-start justify-between gap-2">
-            <div className="grid h-11 w-11 place-items-center rounded-xl border border-[#F59E0B]/35 bg-[#F59E0B]/10 text-[#FCD34D]">
+          <div className="flex items-start justify-between gap-3">
+            <div className="grid h-11 w-11 place-items-center rounded-control border border-warn/35 bg-warn-soft text-warn-ink">
               <Timer size={20} />
             </div>
             <div className="text-right">
-              <p className="font-mono text-[26px] font-medium leading-none tabular-nums text-[#FCD34D]">
+              <p className="text-screen font-semibold leading-none tabular-nums text-warn-ink">
                 {seconds}
               </p>
-              <p className="mt-0.5 text-[8.5px] text-[#7FA793]">
+              <p className="mt-1 text-meta text-muted">
                 {kk ? "секунд" : "секунд"}
               </p>
             </div>
           </div>
 
-          <h2 className="mt-3 text-[16px] font-medium leading-tight tracking-[-0.01em]">
+          <h2 className="mt-3 font-display text-modal font-semibold">
             {kk ? "BCC SafeCall салқындату кезеңі" : "Период охлаждения BCC SafeCall"}
           </h2>
-          <p className="mt-1 text-[10px] leading-snug text-[#7FA793]">
+          <p className="mt-1 text-body text-ink-soft">
             {kk
               ? "Операция тоқтатылды. Сұрақтарды оқып, сізді алаяқ басқармайтынына көз жеткізіңіз."
               : "Операция приостановлена. Прочитайте вопросы и подтвердите, что вами не управляет мошенник."}
           </p>
 
-          <div className="mt-2.5 flex items-center justify-between gap-2 rounded-lg border border-[#1E4233] bg-[#06110C] px-3 py-2">
-            <span className="text-[9.5px] text-[#A9CBB9]">
+          <div className="mt-3 flex items-center justify-between gap-3 rounded-card border border-line bg-raised px-3 py-3">
+            <span className="min-w-0 truncate text-body text-ink-soft">
               {pending.recipient}
             </span>
-            <span className="whitespace-nowrap font-mono text-[12px] tabular-nums text-[#E8F5EE]">
+            <span className="shrink-0 whitespace-nowrap text-body font-semibold tabular-nums text-ink">
               {formatKzt(pending.amount)}
             </span>
           </div>
 
-          <div className="mt-2.5 space-y-1.5">
+          <div className="mt-3 space-y-2">
             {COOLDOWN_CHECKS[lang].map((check, index) => (
               <label
                 key={check}
-                className={`flex cursor-pointer items-start gap-2 rounded-lg border px-2.5 py-2 transition-colors ${
+                className={`flex min-h-11 cursor-pointer items-start gap-3 rounded-control border px-3 py-3 transition-colors ${
                   checks[index]
-                    ? "border-[#10B981]/35 bg-[#10B981]/8"
-                    : "border-[#1E4233] bg-[#06110C]"
+                    ? "border-safe/35 bg-safe-soft"
+                    : "border-line bg-raised"
                 }`}
               >
                 <input
@@ -1706,35 +1687,41 @@ function CooldownDialog({
                       ),
                     )
                   }
-                  className="mt-0.5 h-4 w-4 shrink-0 accent-[#00A859]"
+                  className="mt-0.5 h-5 w-5 shrink-0 accent-accent"
                 />
-                <span className="text-[9.5px] leading-snug text-[#CFE8DC]">
+                <span
+                  className={`text-body leading-snug ${
+                    checks[index] ? "text-ink" : "text-ink-soft"
+                  }`}
+                >
                   {check}
                 </span>
               </label>
             ))}
           </div>
 
-          <button
-            type="button"
-            onClick={onConfirm}
-            disabled={!canConfirm}
-            className={`mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-[11px] font-semibold transition-colors ${
-              canConfirm
-                ? "bg-[#00A859] text-[#04130C] hover:bg-[#10B981]"
-                : "cursor-not-allowed border border-[#1E4233] bg-[#122B21]/50 text-[#648975]"
-            }`}
-          >
-            <Check size={13} />
-            {kk ? "Аударымды растау" : "Подтвердить перевод"}
-          </button>
-          <button
-            type="button"
-            onClick={onCancel}
-            className="mt-1.5 w-full rounded-lg border border-[#1E4233] px-3 py-2 text-[10.5px] text-[#A9CBB9] transition-colors hover:bg-[#122B21]"
-          >
-            {kk ? "Аударымнан бас тарту" : "Отменить перевод"}
-          </button>
+          <div className="mt-4 space-y-2">
+            <button
+              type="button"
+              onClick={onConfirm}
+              disabled={!canConfirm}
+              className={`flex min-h-11 w-full items-center justify-center gap-2 rounded-control border px-3 text-body font-semibold transition-colors ${
+                canConfirm
+                  ? "border-transparent bg-accent text-accent-ink hover:bg-accent-strong"
+                  : "cursor-not-allowed border-line bg-line text-muted"
+              }`}
+            >
+              <Check size={16} />
+              {kk ? "Аударымды растау" : "Подтвердить перевод"}
+            </button>
+            <button
+              type="button"
+              onClick={onCancel}
+              className="flex min-h-11 w-full items-center justify-center rounded-control border border-line px-3 text-body font-medium text-ink transition-colors hover:bg-raised"
+            >
+              {kk ? "Аударымнан бас тарту" : "Отменить перевод"}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -1934,104 +1921,107 @@ function NbrkReportDialog({
   };
 
   return (
-    <div className="absolute inset-0 z-50 overflow-y-auto bg-[#020806]/85 backdrop-blur-sm">
-      <div className="flex min-h-full items-center justify-center p-4">
+    <div className="absolute inset-0 z-50 overflow-y-auto bg-overlay/45 backdrop-blur-sm [[data-theme=dark]_&]:bg-overlay/70">
+      <div className="flex min-h-full items-start justify-center p-4">
         <div
           role="dialog"
           aria-modal="true"
           aria-label={t("reportTitle")}
-          className="w-full max-w-[340px] animate-fade-rise rounded-2xl border border-[#34D399]/35 bg-[#0B1F17] p-4 shadow-panel"
+          className="relative my-auto w-full max-w-[340px] animate-fade-rise rounded-sheet border border-line bg-surface p-5 text-ink shadow-panel"
         >
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex items-start gap-2.5">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[#34D399]/35 bg-[#34D399]/10 text-[#6EE7B7]">
-                <Building2 size={18} />
-              </span>
-              <div>
-                <p className="text-[8.5px] text-[#7FA793]">
-                  NBRK · ANTIFRAUD GATEWAY
-                </p>
-                <h2 className="mt-0.5 text-[13px] font-medium leading-tight text-[#E8F5EE]">
-                  {t("reportTitle")}
-                </h2>
-              </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={t("close")}
+            className="absolute right-4 top-4 grid h-11 w-11 place-items-center rounded-control text-muted transition-colors hover:bg-raised hover:text-ink"
+          >
+            <X size={16} />
+          </button>
+
+          <div className="flex items-start gap-3 pr-12">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-control border border-safe/35 bg-safe-soft text-safe-ink">
+              <Building2 size={18} />
+            </span>
+            <div className="min-w-0">
+              <p className="text-meta font-medium text-muted">
+                NBRK · ANTIFRAUD GATEWAY
+              </p>
+              <h2 className="mt-1 font-display text-modal font-semibold">
+                {t("reportTitle")}
+              </h2>
             </div>
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label={t("close")}
-              className="grid h-7 w-7 shrink-0 place-items-center rounded-md text-[#7FA793] transition-colors hover:bg-[#122B21] hover:text-[#E8F5EE]"
-            >
-              <X size={14} />
-            </button>
           </div>
 
-          <div className="mt-2.5 flex items-center justify-between gap-2 rounded-lg border border-[#10B981]/30 bg-[#10B981]/8 px-2.5 py-2">
-            <span className="flex items-center gap-1.5 text-[9px] font-medium text-[#A7F3D0]">
-              <span className="h-1.5 w-1.5 animate-live-pulse rounded-full bg-[#10B981]" />
+          <div className="mt-4 flex items-center justify-between gap-3 rounded-card border border-safe/35 bg-safe-soft px-3 py-3">
+            <span className="flex items-center gap-2 text-body font-medium text-safe-ink">
+              <span className="h-1.5 w-1.5 animate-live-pulse rounded-full bg-safe" />
               {t("reportSent")}
             </span>
-            <ClipboardCheck size={13} className="text-[#6EE7B7]" />
+            <ClipboardCheck size={16} className="shrink-0 text-safe" />
           </div>
 
-          <div className="mt-2.5 grid grid-cols-2 gap-x-2 gap-y-1.5 rounded-lg border border-[#1E4233] bg-[#06110C] px-2.5 py-2">
-            <div>
-              <p className="text-[7.5px] text-[#648975]">reportId</p>
-              <p className="mt-0.5 break-all font-mono text-[8.5px] text-[#CFE8DC]">
+          <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 rounded-card border border-line bg-raised p-4">
+            <div className="min-w-0">
+              <p className="text-meta text-muted">reportId</p>
+              <p className="mt-1 break-all font-mono text-hash text-ink-soft">
                 {report.reportId}
               </p>
             </div>
-            <div>
-              <p className="text-[7.5px] text-[#648975]">bankBic</p>
-              <p className="mt-0.5 font-mono text-[8.5px] text-[#CFE8DC]">
+            <div className="min-w-0">
+              <p className="text-meta text-muted">bankBic</p>
+              <p className="mt-1 font-mono text-hash text-ink-soft">
                 {report.bankBic}
               </p>
             </div>
-            <div>
-              <p className="text-[7.5px] text-[#648975]">riskScore</p>
-              <p className="mt-0.5 font-mono text-[8.5px] text-[#FCA5A5]">
+            <div className="min-w-0">
+              <p className="text-meta text-muted">riskScore</p>
+              <p className="mt-1 text-meta font-semibold tabular-nums text-danger-ink">
                 {report.riskScore}/100
               </p>
             </div>
-            <div>
-              <p className="text-[7.5px] text-[#648975]">resolution</p>
-              <p className="mt-0.5 break-all font-mono text-[8px] text-[#6EE7B7]">
+            <div className="min-w-0">
+              <p className="text-meta text-muted">resolution</p>
+              <p className="mt-1 break-all font-mono text-hash text-safe-ink">
                 {report.resolution}
               </p>
             </div>
           </div>
 
-          <p className="mt-2 flex items-center gap-1.5 text-[8.5px] text-[#648975]">
-            <FileJson size={11} />
+          <p className="mt-3 flex items-center gap-2 text-meta text-muted">
+            <FileJson size={14} />
             JSON · NBRK-ANTIFRAUD-EXCHANGE-V2
           </p>
-          <pre className="bcc-scroll mt-1 max-h-[178px] overflow-auto rounded-lg border border-[#1E4233] bg-[#06110C] p-2.5 font-mono text-[8px] leading-relaxed text-[#A9CBB9]">
+          <pre className="bcc-scroll mt-2 max-h-44 overflow-auto rounded-card border border-line bg-raised p-3 font-sans text-hash font-medium leading-relaxed text-ink-soft">
             {json}
           </pre>
 
           {copyError && (
-            <p className="mt-1.5 text-[9px] text-[#FCA5A5]">{copyError}</p>
+            <p className="mt-3 rounded-control bg-danger-soft px-3 py-2 text-meta text-danger-ink">
+              {copyError}
+            </p>
           )}
 
-          <button
-            type="button"
-            onClick={() => void copyJson()}
-            className={`mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-[10.5px] font-semibold transition-colors ${
-              copied
-                ? "border border-[#10B981]/40 bg-[#10B981]/10 text-[#A7F3D0]"
-                : "bg-[#00A859] text-[#04130C] hover:bg-[#10B981]"
-            }`}
-          >
-            {copied ? <CheckCircle2 size={13} /> : <Copy size={13} />}
-            {copied ? t("copied") : t("copyJson")}
-          </button>
-          <button
-            type="button"
-            onClick={onClose}
-            className="mt-1.5 w-full rounded-lg border border-[#1E4233] px-3 py-2 text-[10px] text-[#A9CBB9] transition-colors hover:bg-[#122B21]"
-          >
-            {t("close")}
-          </button>
+          <div className="mt-4 space-y-2">
+            <button
+              type="button"
+              onClick={() => void copyJson()}
+              className={`flex min-h-11 w-full items-center justify-center gap-2 rounded-control border px-3 text-body font-semibold transition-colors ${
+                copied
+                  ? "border-safe/35 bg-safe-soft text-safe-ink"
+                  : "border-transparent bg-accent text-accent-ink hover:bg-accent-strong"
+              }`}
+            >
+              {copied ? <CheckCircle2 size={16} /> : <Copy size={16} />}
+              {copied ? t("copied") : t("copyJson")}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex min-h-11 w-full items-center justify-center rounded-control border border-line px-3 text-body font-medium text-ink transition-colors hover:bg-raised"
+            >
+              {t("close")}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -2062,27 +2052,23 @@ type JuryTone = "danger" | "success" | "warning" | "guardian";
 
 const JURY_TONE: Record<
   JuryTone,
-  { activeRow: string; activeIcon: string; inactiveIcon: string }
+  { activeRow: string; activeIcon: string }
 > = {
   danger: {
-    activeRow: "border-[#EF4444]/45 bg-[#EF4444]/10",
-    activeIcon: "bg-[#EF4444]/15 text-[#FCA5A5]",
-    inactiveIcon: "bg-[#122B21] text-[#7FA793]",
+    activeRow: "border-danger/35 bg-danger-soft",
+    activeIcon: "text-danger",
   },
   success: {
-    activeRow: "border-[#10B981]/45 bg-[#10B981]/10",
-    activeIcon: "bg-[#10B981]/15 text-[#6EE7B7]",
-    inactiveIcon: "bg-[#122B21] text-[#7FA793]",
+    activeRow: "border-safe/35 bg-safe-soft",
+    activeIcon: "text-safe",
   },
   warning: {
-    activeRow: "border-[#F59E0B]/45 bg-[#F59E0B]/10",
-    activeIcon: "bg-[#F59E0B]/15 text-[#FCD34D]",
-    inactiveIcon: "bg-[#122B21] text-[#7FA793]",
+    activeRow: "border-warn/35 bg-warn-soft",
+    activeIcon: "text-warn",
   },
   guardian: {
-    activeRow: "border-[#8B5CF6]/45 bg-[#8B5CF6]/10",
-    activeIcon: "bg-[#8B5CF6]/15 text-[#C4B5FD]",
-    inactiveIcon: "bg-[#122B21] text-[#7FA793]",
+    activeRow: "border-guardian/35 bg-guardian-soft",
+    activeIcon: "text-guardian",
   },
 };
 
@@ -2104,27 +2090,23 @@ function JuryToggleRow({
   const palette = JURY_TONE[tone];
   return (
     <div
-      className={`flex items-center gap-2.5 rounded-xl border px-2.5 py-2 transition-colors ${
-        checked
-          ? palette.activeRow
-          : "border-[#1E4233]/70 bg-[#122B21]/35"
+      className={`flex min-h-12 items-center gap-3 rounded-control border px-3 py-2 transition-colors ${
+        checked ? palette.activeRow : "border-line bg-raised"
       }`}
     >
       <span
-        className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${
-          checked ? palette.activeIcon : palette.inactiveIcon
+        className={`grid h-9 w-9 shrink-0 place-items-center rounded-control bg-surface ${
+          checked ? palette.activeIcon : "text-muted"
         }`}
         aria-hidden="true"
       >
         <Icon size={16} strokeWidth={1.9} />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-[11.5px] font-medium leading-tight text-[#E8F5EE]">
+        <p className="text-body font-semibold leading-snug text-ink">
           {label}
         </p>
-        <p className="mt-0.5 text-[10px] leading-snug text-[#7FA793]">
-          {hint}
-        </p>
+        <p className="mt-1 text-meta leading-snug text-ink-soft">{hint}</p>
       </div>
       <Toggle checked={checked} onChange={onChange} label={label} />
     </div>
@@ -2147,50 +2129,50 @@ function JuryPanel({
   onResetDemo,
 }: JuryPanelProps) {
   const meta = DECISION_META[risk.decision];
+  const tone = DECISION_TONE[risk.decision];
   const activeWeights = risk.weights.filter((weight) => weight.active);
   const t = (key: DictKey) => DICT[lang][key];
 
   return (
-    <div className="flex min-h-full flex-col gap-3.5 rounded-2xl border border-[#1E4233] bg-[#0B1F17] p-4 shadow-panel">
+    <div className="flex min-h-full flex-col gap-6">
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <h2 className="text-[16px] font-medium text-[#E8F5EE]">
+        <div className="min-w-0">
+          <h2 className="text-section font-semibold text-ink">
             {t("juryTitle")}
           </h2>
-          <p className="mt-0.5 text-[10.5px] text-[#7FA793]">
-            {t("jurySubtitle")}
-          </p>
+          <p className="mt-1 text-meta text-muted">{t("jurySubtitle")}</p>
         </div>
-        <div className="flex shrink-0 flex-col items-end gap-1.5">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-[#10B981]/30 bg-[#10B981]/10 px-2 py-1 text-[9.5px] text-[#6EE7B7]">
-            <span className="h-1.5 w-1.5 animate-live-pulse rounded-full bg-[#10B981]" />
+        <div className="flex shrink-0 flex-col items-end gap-2">
+          <span className="inline-flex items-center gap-2 rounded-full border border-safe/35 bg-safe-soft px-2 py-1 text-meta font-medium text-safe-ink">
+            <span className="h-1.5 w-1.5 animate-live-pulse rounded-full bg-safe" />
             LIVE
           </span>
           <LangSwitch lang={lang} onChange={onLangChange} compact />
         </div>
       </div>
 
-      <div className="rounded-xl border border-[#1E4233] bg-[#06110C] p-3.5">
+      <div className="rounded-card border border-line bg-raised p-4">
         <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-[10px] font-medium text-[#7FA793]">
+          <div className="min-w-0">
+            <p className="text-meta font-medium text-muted">
               Unified Risk Score
             </p>
             <p
-              className="mt-1 font-mono text-[42px] font-medium leading-none tabular-nums"
-              style={{ color: meta.hex }}
+              className={`mt-1 font-display text-score font-semibold leading-none tabular-nums ${tone.text}`}
             >
               {risk.score}
-              <span className="text-[14px] text-[#648975]">/100</span>
+              <span className="ml-1 align-baseline font-sans text-body font-normal text-muted">
+                /100
+              </span>
             </p>
           </div>
-          <div className="text-right">
+          <div className="shrink-0 text-right">
             <span
-              className={`inline-flex rounded-md border px-2 py-1 font-mono text-[9.5px] ${meta.badgeClass}`}
+              className={`inline-flex rounded-full border px-3 py-1 text-meta font-medium ${tone.badge}`}
             >
               {meta.label}
             </span>
-            <p className="mt-1 text-[10px] text-[#7FA793]">
+            <p className="mt-1 text-meta text-ink-soft">
               {t(DECISION_KEY[risk.decision])}
             </p>
           </div>
@@ -2198,26 +2180,26 @@ function JuryPanel({
 
         <RiskScale risk={risk} />
 
-        <div className="mt-3 flex flex-wrap gap-1.5">
+        <div className="mt-3 flex flex-wrap gap-2">
           {activeWeights.length === 0 ? (
-            <span className="rounded-md border border-[#1E4233] bg-[#122B21] px-2 py-1 text-[10px] text-[#7FA793]">
+            <span className="rounded-full border border-line bg-surface px-3 py-1 text-meta text-muted">
               Нет активных триггеров
             </span>
           ) : (
             activeWeights.map((weight) => (
               <span
                 key={weight.key}
-                className="rounded-md border border-[#1E4233] bg-[#122B21] px-2 py-1 text-[9.5px] text-[#A9CBB9]"
+                className="rounded-full border border-line bg-surface px-3 py-1 text-meta text-ink-soft"
               >
                 {weight.label}{" "}
-                <span className="font-mono text-[#34D399]">
+                <span className="font-semibold tabular-nums text-accent-strong">
                   +{weight.points}
                 </span>
               </span>
             ))
           )}
         </div>
-        <p className="mt-2 font-mono text-[10.5px] text-[#7FA793]">
+        <p className="mt-2 text-meta tabular-nums text-muted">
           {activeWeights.length
             ? `${activeWeights
                 .map((weight) => weight.points)
@@ -2229,13 +2211,13 @@ function JuryPanel({
       </div>
 
       <div>
-        <div className="mb-2 flex items-center justify-between px-0.5">
-          <h3 className="text-[11px] font-medium text-[#A9CBB9]">
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <h3 className="text-section font-semibold text-ink">
             {t("attackScenarios")}
           </h3>
-          <span className="text-[9.5px] text-[#648975]">5 пресетов</span>
+          <span className="text-meta text-muted">5 пресетов</span>
         </div>
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <JuryToggleRow
             icon={PhoneIncoming}
             label="Симулировать звонок с неизвестного номера"
@@ -2277,77 +2259,77 @@ function JuryPanel({
         <button
           type="button"
           onClick={onStorm}
-          className="mt-2 flex w-full items-center gap-2.5 rounded-xl border border-[#EF4444]/40 bg-[#EF4444]/10 px-2.5 py-2.5 text-left transition-colors hover:bg-[#EF4444]/15"
+          className="mt-2 flex min-h-11 w-full items-center gap-3 rounded-control border border-danger/35 bg-danger-soft px-3 py-3 text-left transition-colors hover:border-danger"
         >
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[#EF4444]/15 text-[15px]">
-            🔥
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-control bg-surface text-danger">
+            <Siren size={16} />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-[11.5px] font-medium text-[#FCA5A5]">
+            <span className="block text-body font-semibold text-danger-ink">
               {t("stormTitle")}
             </span>
-            <span className="mt-0.5 block text-[10px] leading-snug text-[#B98D8D]">
+            <span className="mt-1 block text-meta leading-snug text-danger-ink">
               {t("stormHint")}
             </span>
           </span>
-          <ArrowRight size={14} className="shrink-0 text-[#FCA5A5]" />
+          <ArrowRight size={16} className="shrink-0 text-danger-ink" />
         </button>
 
         <button
           type="button"
           onClick={onReset}
-          className="mt-1.5 flex w-full items-center justify-center gap-1.5 rounded-lg border border-[#1E4233] bg-transparent px-2 py-1.5 text-[10px] text-[#7FA793] transition-colors hover:bg-[#122B21] hover:text-[#E8F5EE]"
+          className="mt-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-control border border-line bg-transparent px-3 text-body font-medium text-ink transition-colors hover:bg-raised"
         >
-          <RotateCcw size={11} />
+          <RotateCcw size={16} />
           {t("resetTriggers")}
         </button>
 
         <button
           type="button"
           onClick={onResetDemo}
-          className="mt-1.5 flex w-full items-center justify-center gap-1.5 rounded-lg border border-[#34D399]/45 bg-[#34D399]/10 px-2 py-2 text-[10.5px] font-medium text-[#A7F3D0] transition-colors hover:bg-[#34D399]/16"
+          className="mt-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-control border border-safe/35 bg-safe-soft px-3 text-body font-semibold text-safe-ink transition-colors hover:border-safe"
         >
-          <RotateCcw size={12} />
+          <RotateCcw size={16} />
           {t("resetDemo")}
         </button>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col rounded-xl border border-[#1E4233] bg-[#06110C]">
-        <div className="flex items-center justify-between border-b border-[#1E4233]/70 px-3 py-2">
-          <div className="flex items-center gap-1.5">
-            <Activity size={12} className="text-[#34D399]" />
-            <h3 className="text-[10.5px] font-medium text-[#A9CBB9]">
+      <div className="rounded-card border border-line bg-raised">
+        <div className="flex items-center justify-between gap-2 border-b border-line px-3 py-3">
+          <div className="flex min-w-0 items-center gap-2">
+            <Activity size={16} className="shrink-0 text-accent" />
+            <h3 className="text-section font-semibold text-ink">
               Security Telemetry Feed
             </h3>
           </div>
-          <span className="font-mono text-[9px] text-[#648975]">
+          <span className="shrink-0 text-meta tabular-nums text-muted">
             {logs.length}
           </span>
         </div>
-        <div className="bcc-scroll max-h-[210px] min-h-[72px] flex-1 space-y-2 overflow-y-auto px-3 py-2 lg:max-h-none">
+        <div className="space-y-3 px-3 py-3">
           {logs.length === 0 ? (
-            <p className="py-3 text-center text-[10px] text-[#648975]">
+            <p className="py-3 text-center text-meta text-muted">
               Событий пока нет
             </p>
           ) : (
             logs.map((entry) => (
               <div key={entry.id} className="flex gap-2">
                 <span
-                  className={`mt-[5px] h-1.5 w-1.5 shrink-0 rounded-full ${
+                  className={`mt-2 h-1.5 w-1.5 shrink-0 rounded-full ${
                     entry.level === "success"
-                      ? "bg-[#10B981]"
+                      ? "bg-safe"
                       : entry.level === "warn"
-                        ? "bg-[#F59E0B]"
+                        ? "bg-warn"
                         : entry.level === "danger"
-                          ? "bg-[#EF4444]"
-                          : "bg-[#34D399]"
+                          ? "bg-danger"
+                          : "bg-accent"
                   }`}
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="text-[10.5px] leading-snug text-[#C4DDD1]">
+                  <p className="text-secondary leading-snug text-ink-soft">
                     {entry.message}
                   </p>
-                  <p className="mt-0.5 font-mono text-[9px] text-[#648975]">
+                  <p className="mt-1 font-mono text-aux text-muted">
                     {entry.time}
                   </p>
                 </div>
@@ -3256,74 +3238,75 @@ export default function Page() {
     if (modal.kind === "success") {
       const receipt = modal.receipt;
       return (
-        <div className="absolute inset-0 z-50 overflow-y-auto bg-[#020806]/80 backdrop-blur-sm">
-          <div className="flex min-h-full items-center justify-center p-4">
+        <div className="absolute inset-0 z-50 overflow-y-auto bg-overlay/45 backdrop-blur-sm [[data-theme=dark]_&]:bg-overlay/70">
+          <div className="flex min-h-full items-start justify-center p-4">
             <div
               role="dialog"
               aria-modal="true"
               aria-label={kk ? "Аударым өткізілді" : "Перевод проведен"}
-              className="w-full max-w-[330px] animate-fade-rise rounded-2xl border border-[#10B981]/35 bg-[#0B1F17] p-5 shadow-panel"
+              className="relative my-auto w-full max-w-[330px] animate-fade-rise rounded-sheet border border-line bg-surface p-5 text-ink shadow-panel"
             >
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => setModal({ kind: "none" })}
-                  aria-label={kk ? "Жабу" : "Закрыть"}
-                  className="grid h-7 w-7 place-items-center rounded-md text-[#7FA793] transition-colors hover:bg-[#122B21] hover:text-[#E8F5EE]"
-                >
-                  <X size={14} />
-                </button>
-              </div>
-              <div className="-mt-2 grid h-12 w-12 place-items-center rounded-full border border-[#10B981]/35 bg-[#10B981]/12 text-[#6EE7B7]">
+              <button
+                type="button"
+                onClick={() => setModal({ kind: "none" })}
+                aria-label={kk ? "Жабу" : "Закрыть"}
+                className="absolute right-4 top-4 grid h-11 w-11 place-items-center rounded-control text-muted transition-colors hover:bg-raised hover:text-ink"
+              >
+                <X size={16} />
+              </button>
+
+              <div className="grid h-12 w-12 place-items-center rounded-full border border-safe/35 bg-safe-soft text-safe-ink">
                 <CheckCircle2 size={24} />
               </div>
-              <h2 className="mt-3 text-[18px] font-medium tracking-[-0.01em]">
+              <h2 className="mt-4 font-display text-modal font-semibold">
                 {kk ? "Аударым өткізілді" : "Перевод проведен"}
               </h2>
-              <p className="mt-1 text-[10.5px] leading-snug text-[#7FA793]">
+              <p className="mt-1 text-body text-ink-soft">
                 {kk
                   ? "Ақша жіберілді, крипточек BCC Shield 360 кілтімен қол қойылды."
                   : "Деньги отправлены, крипто-чек подписан ключом BCC Shield 360."}
               </p>
 
-              <div className="mt-3 rounded-xl border border-[#1E4233] bg-[#06110C] px-3 py-2.5">
-                <p className="whitespace-nowrap font-mono text-[22px] font-medium tabular-nums text-[#E8F5EE]">
+              <div className="mt-4 rounded-card border border-line bg-raised px-3 py-3">
+                <p className="whitespace-nowrap text-amount font-semibold tabular-nums text-ink">
                   {formatKzt(receipt.amount)}
                 </p>
-                <p className="mt-0.5 text-[10px] text-[#A9CBB9]">
+                <p className="mt-1 text-body text-ink-soft">
                   {receipt.recipient}
                 </p>
               </div>
 
-              <p className="mt-2.5 text-[8.5px] text-[#648975]">
+              <p className="mt-4 text-meta text-muted">
                 {kk
                   ? "HMAC-SHA256 цифрлық қолтаңбасы"
                   : "Цифровая подпись HMAC-SHA256"}
               </p>
-              <p className="mt-0.5 break-all font-mono text-[10px] text-[#6EE7B7]">
+              <p className="mt-1 break-all font-mono text-hash text-safe-ink">
                 {receipt.signature}
               </p>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setTab("trustlens");
-                  setModal({ kind: "none" });
-                }}
-                className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#00A859] px-3 py-2.5 text-[11px] font-semibold text-[#04130C] transition-colors hover:bg-[#10B981]"
-              >
-                {kk
-                  ? "TrustLens-тегі крипточекке өту"
-                  : "Перейти к крипто-чеку в TrustLens"}
-                <ArrowRight size={13} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setModal({ kind: "none" })}
-                className="mt-1.5 w-full rounded-lg border border-[#1E4233] px-3 py-2 text-[10.5px] text-[#A9CBB9] transition-colors hover:bg-[#122B21]"
-              >
-                {kk ? "Жабу" : "Закрыть"}
-              </button>
+              <div className="mt-4 space-y-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTab("trustlens");
+                    setModal({ kind: "none" });
+                  }}
+                  className="flex min-h-11 w-full items-center justify-center gap-2 rounded-control bg-accent px-3 text-body font-semibold text-accent-ink transition-colors hover:bg-accent-strong"
+                >
+                  {kk
+                    ? "TrustLens-тегі крипточекке өту"
+                    : "Перейти к крипто-чеку в TrustLens"}
+                  <ArrowRight size={16} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setModal({ kind: "none" })}
+                  className="flex min-h-11 w-full items-center justify-center rounded-control border border-line px-3 text-body font-medium text-ink transition-colors hover:bg-raised"
+                >
+                  {kk ? "Жабу" : "Закрыть"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -3354,8 +3337,8 @@ export default function Page() {
     if (modal.kind === "hold") {
       const hold = modal.hold;
       return (
-        <div className="absolute inset-0 z-50 overflow-y-auto bg-[#020806]/80 backdrop-blur-sm">
-          <div className="flex min-h-full items-center justify-center p-4">
+        <div className="absolute inset-0 z-50 overflow-y-auto bg-overlay/45 backdrop-blur-sm [[data-theme=dark]_&]:bg-overlay/70">
+          <div className="flex min-h-full items-start justify-center p-4">
             <div
               role="dialog"
               aria-modal="true"
@@ -3364,55 +3347,59 @@ export default function Page() {
                   ? "Операция Отбасылық қалқанмен мұздатылды"
                   : "Операция заморожена Семейным Щитом"
               }
-              className="w-full max-w-[330px] animate-fade-rise rounded-2xl border border-[#8B5CF6]/40 bg-[#0B1F17] p-5 shadow-panel"
+              className="my-auto w-full max-w-[330px] animate-fade-rise rounded-sheet border border-line bg-surface p-5 text-ink shadow-panel"
             >
-              <div className="grid h-11 w-11 place-items-center rounded-xl border border-[#8B5CF6]/35 bg-[#8B5CF6]/10 text-[#C4B5FD]">
+              <div className="grid h-11 w-11 place-items-center rounded-control border border-guardian/35 bg-guardian-soft text-guardian-ink">
                 <Lock size={20} />
               </div>
-              <h2 className="mt-3 text-[16px] font-medium leading-tight tracking-[-0.01em]">
+              <h2 className="mt-3 font-display text-modal font-semibold">
                 {kk
                   ? "Операция Отбасылық қалқанмен мұздатылды"
                   : "Операция заморожена Семейным Щитом"}
               </h2>
-              <p className="mt-1 text-[10px] leading-snug text-[#7FA793]">
+              <p className="mt-1 text-body text-ink-soft">
                 {kk
                   ? "Отбасы Қорғаушысының растауы қажет. Аударым мәртебесі:"
                   : "Требуется одобрение Хранителя семьи. Статус перевода:"}{" "}
-                <span className="font-mono text-[#C4B5FD]">HOLD_MULTISIG</span>
+                <span className="font-mono text-hash text-guardian-ink">
+                  HOLD_MULTISIG
+                </span>
               </p>
 
-              <div className="mt-2.5 rounded-lg border border-[#1E4233] bg-[#06110C] px-3 py-2">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[9.5px] text-[#A9CBB9]">
+              <div className="mt-3 rounded-card border border-line bg-raised px-3 py-3">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="min-w-0 truncate text-body text-ink-soft">
                     {hold.to}
                   </span>
-                  <span className="whitespace-nowrap font-mono text-[13px] tabular-nums text-[#E8F5EE]">
+                  <span className="shrink-0 whitespace-nowrap text-body font-semibold tabular-nums text-ink">
                     {formatKzt(hold.amount)}
                   </span>
                 </div>
-                <p className="mt-1.5 flex items-start gap-1 text-[8.5px] leading-snug text-[#E7C98A]">
-                  <AlertTriangle size={9} className="mt-0.5 shrink-0" />
+                <p className="mt-2 flex items-start gap-2 rounded-control border border-warn/35 bg-warn-soft px-3 py-2 text-secondary leading-snug text-warn-ink">
+                  <AlertTriangle size={14} className="mt-0.5 shrink-0" />
                   {hold.reason}
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={openGuardPayForHold}
-                className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#00A859] px-3 py-2.5 text-[11px] font-semibold text-[#04130C] transition-colors hover:bg-[#10B981]"
-              >
-                {kk
-                  ? "GuardPay-ды Қорғаушы режимінде ашу"
-                  : "Открыть GuardPay в режиме Хранителя"}
-                <ArrowRight size={13} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setModal({ kind: "none" })}
-                className="mt-1.5 w-full rounded-lg border border-[#1E4233] px-3 py-2 text-[10.5px] text-[#A9CBB9] transition-colors hover:bg-[#122B21]"
-              >
-                {kk ? "Кезекте қалдыру" : "Оставить в очереди"}
-              </button>
+              <div className="mt-4 space-y-2">
+                <button
+                  type="button"
+                  onClick={openGuardPayForHold}
+                  className="flex min-h-11 w-full items-center justify-center gap-2 rounded-control bg-accent px-3 text-body font-semibold text-accent-ink transition-colors hover:bg-accent-strong"
+                >
+                  {kk
+                    ? "GuardPay-ды Қорғаушы режимінде ашу"
+                    : "Открыть GuardPay в режиме Хранителя"}
+                  <ArrowRight size={16} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setModal({ kind: "none" })}
+                  className="flex min-h-11 w-full items-center justify-center rounded-control border border-line px-3 text-body font-medium text-ink transition-colors hover:bg-raised"
+                >
+                  {kk ? "Кезекте қалдыру" : "Оставить в очереди"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -3422,95 +3409,97 @@ export default function Page() {
     const triggers = modal.triggers;
     const score = modal.score;
     return (
-      <div className="absolute inset-0 z-50 overflow-y-auto bg-[#020806]/85 backdrop-blur-sm">
-        <div className="flex min-h-full items-center justify-center p-4">
+      <div className="absolute inset-0 z-50 overflow-y-auto bg-overlay/45 backdrop-blur-sm [[data-theme=dark]_&]:bg-overlay/70">
+        <div className="flex min-h-full items-start justify-center p-4">
           <div
             role="dialog"
             aria-modal="true"
             aria-label={kk ? "Операция бұғатталды" : "Операция заблокирована"}
-            className="w-full max-w-[332px] animate-fade-rise rounded-2xl border border-[#EF4444]/45 bg-[#0B1F17] p-5 shadow-panel"
+            className="my-auto w-full max-w-[332px] animate-fade-rise rounded-sheet border border-line bg-surface p-5 text-ink shadow-panel"
           >
-            <div className="flex items-start justify-between gap-2">
-              <div className="grid h-11 w-11 place-items-center rounded-xl border border-[#EF4444]/40 bg-[#EF4444]/12 text-[#F87171]">
+            <div className="flex items-start justify-between gap-3">
+              <div className="grid h-11 w-11 place-items-center rounded-control border border-danger/35 bg-danger-soft text-danger-ink">
                 <Siren size={20} />
               </div>
-              <span className="rounded-md border border-[#EF4444]/40 bg-[#EF4444]/10 px-2 py-1 font-mono text-[10px] text-[#FCA5A5]">
+              <span className="inline-flex shrink-0 items-center rounded-full border border-danger/35 bg-danger-soft px-3 py-1 text-meta font-medium tabular-nums text-danger-ink">
                 {score}/100 · BLOCK
               </span>
             </div>
 
-            <h2 className="mt-3 text-[16px] font-medium leading-tight tracking-[-0.01em]">
+            <h2 className="mt-3 font-display text-modal font-semibold">
               {kk
                 ? "Операция BCC Shield 360 жүйесімен бұғатталды"
                 : "Операция заблокирована системой BCC Shield 360"}
             </h2>
-            <p className="mt-1 text-[10px] leading-snug text-[#7FA793]">
+            <p className="mt-1 text-body text-ink-soft">
               {kk
                 ? "Триггерлер комбинациясы іске қосылды. Ақша шоттан шыққан жоқ."
                 : "Сработала комбинация триггеров. Деньги не покинули счет."}
             </p>
 
-            <div className="mt-2.5 space-y-1">
+            <div className="mt-3 space-y-2">
               {triggers.map((trigger) => (
                 <div
                   key={trigger.key}
-                  className="flex items-start justify-between gap-2 rounded-md border border-[#EF4444]/20 bg-[#EF4444]/5 px-2 py-1.5"
+                  className="flex items-start justify-between gap-3 rounded-control border border-danger/35 bg-danger-soft px-3 py-2"
                 >
-                  <span className="flex items-start gap-1.5 text-[9px] leading-snug text-[#FECACA]">
+                  <span className="flex min-w-0 items-start gap-2 text-secondary font-medium leading-snug text-danger-ink">
                     <ShieldAlert
-                      size={10}
-                      className="mt-0.5 shrink-0 text-[#F87171]"
+                      size={14}
+                      className="mt-0.5 shrink-0 text-danger"
                     />
                     {trigger.label}
                   </span>
-                  <span className="shrink-0 font-mono text-[9px] text-[#FCA5A5]">
+                  <span className="shrink-0 text-meta font-semibold tabular-nums text-danger-ink">
                     +{trigger.points}
                   </span>
                 </div>
               ))}
             </div>
 
-            <p className="mt-2.5 text-[9px] leading-snug text-[#A9CBB9]">
+            <p className="mt-3 text-secondary leading-relaxed text-ink-soft">
               {kk
                 ? "Егер бұл қате болса, BCC-ге картаның артындағы нөмір арқылы қоңырау шалыңыз. Қоңырау шалушының қысымымен операцияны жалғастырмаңыз."
                 : "Если это ошибка, позвоните в BCC по номеру с обратной стороны карты. Не продолжайте операцию под давлением звонящего."}
             </p>
 
-            <button
-              type="button"
-              onClick={() =>
-                openNbrkReport({
-                  score,
-                  suspectPan: cardValue,
-                  amount,
-                  victimName:
-                    role === "protected" ? "Сауле Ахметова" : "Марат Сериков",
-                  victimAge: role === "protected" ? 68 : 34,
-                  guardPayProtected: true,
-                  incidentType: "UNIFIED_RISK_BLOCK",
-                  extraFlags: ["BLOCK_MODAL_CONFIRMED"],
-                })
-              }
-              className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-[#34D399]/45 bg-[#34D399]/10 px-3 py-2.5 text-[10.5px] font-medium text-[#A7F3D0] transition-colors hover:bg-[#34D399]/16"
-            >
-              <Building2 size={13} />
-              {t("reportCta")}
-            </button>
-            <button
-              type="button"
-              onClick={resetAttack}
-              className="mt-1.5 flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#00A859] px-3 py-2.5 text-[11px] font-semibold text-[#04130C] transition-colors hover:bg-[#10B981]"
-            >
-              <RotateCcw size={13} />
-              {kk ? "Шабуылды тазарту" : "Сбросить атаку"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setModal({ kind: "none" })}
-              className="mt-1.5 w-full rounded-lg border border-[#1E4233] px-3 py-2 text-[10.5px] text-[#A9CBB9] transition-colors hover:bg-[#122B21]"
-            >
-              {kk ? "Қайту" : "Вернуться"}
-            </button>
+            <div className="mt-4 space-y-2">
+              <button
+                type="button"
+                onClick={() =>
+                  openNbrkReport({
+                    score,
+                    suspectPan: cardValue,
+                    amount,
+                    victimName:
+                      role === "protected" ? "Сауле Ахметова" : "Марат Сериков",
+                    victimAge: role === "protected" ? 68 : 34,
+                    guardPayProtected: true,
+                    incidentType: "UNIFIED_RISK_BLOCK",
+                    extraFlags: ["BLOCK_MODAL_CONFIRMED"],
+                  })
+                }
+                className="flex min-h-11 w-full items-center justify-center gap-2 rounded-control border border-line px-3 text-body font-medium text-ink transition-colors hover:bg-raised"
+              >
+                <Building2 size={16} className="shrink-0 text-safe" />
+                {t("reportCta")}
+              </button>
+              <button
+                type="button"
+                onClick={resetAttack}
+                className="flex min-h-11 w-full items-center justify-center gap-2 rounded-control bg-accent px-3 text-body font-semibold text-accent-ink transition-colors hover:bg-accent-strong"
+              >
+                <RotateCcw size={16} />
+                {kk ? "Шабуылды тазарту" : "Сбросить атаку"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setModal({ kind: "none" })}
+                className="flex min-h-11 w-full items-center justify-center rounded-control border border-line px-3 text-body font-medium text-ink transition-colors hover:bg-raised"
+              >
+                {kk ? "Қайту" : "Вернуться"}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -3831,7 +3820,7 @@ export default function Page() {
                   </div>
 
                   <div
-                    className={`mt-3 flex min-h-12 flex-wrap items-center justify-between gap-2 rounded-control border px-3 py-2 ${RISK_BADGE_TONE[risk.decision].badge}`}
+                    className={`mt-3 flex min-h-12 flex-wrap items-center justify-between gap-2 rounded-control border px-3 py-2 ${DECISION_TONE[risk.decision].badge}`}
                   >
                     <span className="flex shrink-0 items-center gap-2 text-meta">
                       <Gauge size={13} />
@@ -5055,21 +5044,21 @@ export default function Page() {
             type="button"
             onClick={() => setJuryOpen(false)}
             aria-label="Закрыть пульт жюри"
-            className="absolute inset-0 h-full w-full bg-[#020806]/80 backdrop-blur-sm"
+            className="absolute inset-0 h-full w-full bg-overlay/45 backdrop-blur-sm [[data-theme=dark]_&]:bg-overlay/70"
           />
 
           <div
             role="dialog"
             aria-modal="true"
             aria-label="Пульт жюри"
-            className="absolute inset-x-0 bottom-0 flex max-h-[90dvh] animate-drawer-up flex-col rounded-t-[26px] border-t border-[#1E4233] bg-[#06110C] shadow-panel"
+            className="absolute inset-x-0 bottom-0 flex max-h-[90dvh] animate-drawer-up flex-col rounded-t-sheet border-t border-line bg-surface shadow-panel"
           >
-            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[#1E4233] px-4 py-3">
+            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-line px-4 py-3">
               <div className="min-w-0">
-                <p className="text-[9.5px] text-[#7FA793]">
+                <p className="text-meta text-muted">
                   ITU Hackathon 2026 · BCC Bank
                 </p>
-                <p className="mt-0.5 text-[13px] font-medium text-[#E8F5EE]">
+                <p className="mt-1 font-display text-modal font-semibold text-ink">
                   Пульт жюри
                 </p>
               </div>
@@ -5077,13 +5066,13 @@ export default function Page() {
                 type="button"
                 onClick={() => setJuryOpen(false)}
                 aria-label="Закрыть"
-                className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-[#1E4233] bg-[#0B1F17] text-[#A9CBB9] transition-colors hover:bg-[#122B21]"
+                className="grid h-11 w-11 shrink-0 place-items-center rounded-control border border-line bg-raised text-ink-soft transition-colors hover:text-ink"
               >
-                <X size={15} />
+                <X size={16} />
               </button>
             </div>
 
-            <div className="bcc-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 pb-[max(14px,env(safe-area-inset-bottom))]">
+            <div className="bcc-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 pb-[max(16px,env(safe-area-inset-bottom))]">
               <JuryPanel
                 risk={risk}
                 factors={factors}
