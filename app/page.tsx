@@ -1831,7 +1831,7 @@ function CryptoPassport({
           <p className="mt-1 break-all font-mono text-hash tabular-nums leading-snug text-ink-soft">
             TX_ID | TIMESTAMP | SENDER_PAN | RECEIVER_PAN | AMOUNT_KZT | BCC-2026
           </p>
-          <p className="mt-2 break-all rounded-control border border-line bg-surface px-3 py-2 font-mono text-hash tabular-nums leading-snug text-ink-soft">
+          <p className="mt-2 break-all rounded-control border border-line bg-surface px-3 py-2 font-sans font-medium text-hash leading-snug text-ink-soft">
             {actual?.canonical ?? "…"}
           </p>
 
@@ -1865,9 +1865,11 @@ function CryptoPassport({
                 {t("passportActual")}
               </dt>
               <dd
-                className={`mt-1 break-all font-mono text-hash tabular-nums ${
-                  mismatch ? "text-danger-ink" : "text-safe-ink"
-                }`}
+                className={`mt-1 break-all text-hash ${
+                  actual?.computed
+                    ? "font-mono tabular-nums"
+                    : "font-sans font-medium"
+                } ${mismatch ? "text-danger-ink" : "text-safe-ink"}`}
               >
                 {computing
                   ? "…"
@@ -4192,7 +4194,7 @@ export default function Page() {
                             </div>
                           </div>
 
-                          <dl className="mt-3 space-y-2 font-mono text-hash tabular-nums">
+                          <dl className="mt-3 space-y-2 text-hash">
                             <div className="flex items-start justify-between gap-2">
                               <dt
                                 className={
@@ -4204,7 +4206,7 @@ export default function Page() {
                                 Подпись в чеке
                               </dt>
                               <dd
-                                className={`text-right font-medium ${
+                                className={`text-right font-mono tabular-nums font-medium ${
                                   verifyResult.isValid
                                     ? "text-safe-ink"
                                     : "text-danger-ink"
@@ -4224,7 +4226,7 @@ export default function Page() {
                                 Пересчитано
                               </dt>
                               <dd
-                                className={`text-right font-medium ${
+                                className={`text-right font-mono tabular-nums font-medium ${
                                   verifyResult.isValid
                                     ? "text-safe-ink"
                                     : "text-danger-ink"
@@ -4234,7 +4236,7 @@ export default function Page() {
                               </dd>
                             </div>
                           </dl>
-                          <p className="mt-3 break-all rounded-control border border-line bg-raised px-3 py-2 font-mono text-hash tabular-nums leading-snug text-muted">
+                          <p className="mt-3 break-all rounded-control border border-line bg-raised px-3 py-2 font-sans font-medium text-hash leading-snug text-muted">
                             {verifyResult.canonical}
                           </p>
                         </div>
