@@ -3606,14 +3606,14 @@ export default function Page() {
 
           <main className="bcc-scroll relative flex-1 overflow-y-auto overscroll-contain bg-surface px-4 pb-28 pt-1 lg:pb-24">
             {tab === "transfer" && (
-              <section className="animate-fade-rise space-y-3 pb-2">
+              <section className="animate-fade-rise space-y-4 pb-2">
                 {unverifiedCallActive && (
-                  <div className="flex items-start gap-2.5 rounded-xl border border-[#EF4444]/45 bg-[#EF4444]/10 px-3 py-2.5">
+                  <div className="flex items-start gap-2 rounded-card border border-danger/35 bg-danger-soft p-3">
                     <PhoneOff
                       size={15}
-                      className="mt-0.5 shrink-0 text-[#F87171]"
+                      className="mt-0.5 shrink-0 text-danger"
                     />
-                    <p className="text-[11px] leading-snug text-[#FECACA]">
+                    <p className="text-secondary leading-snug text-danger-ink">
                       {t("bannerScam")}
                     </p>
                   </div>
@@ -3629,14 +3629,14 @@ export default function Page() {
                 )}
 
                 {officialBccCallActive && (
-                  <div className="flex items-start gap-2.5 rounded-xl border border-[#10B981]/40 bg-[#10B981]/10 px-3 py-2.5">
+                  <div className="flex items-start gap-2 rounded-card border border-safe/35 bg-safe-soft p-3">
                     <Landmark
                       size={15}
-                      className="mt-0.5 shrink-0 text-[#6EE7B7]"
+                      className="mt-0.5 shrink-0 text-safe"
                     />
-                    <p className="text-[11px] leading-snug text-[#A7F3D0]">
+                    <p className="text-secondary leading-snug text-safe-ink">
                       {t("bannerOfficial")}{" "}
-                      <span className="font-mono font-medium">
+                      <span className="font-sans font-semibold">
                         {sessionCode}
                       </span>
                     </p>
@@ -3652,63 +3652,67 @@ export default function Page() {
                   />
                 )}
 
-                <div className="relative overflow-hidden rounded-2xl border border-[#1E4233] bg-[radial-gradient(130%_130%_at_100%_0%,#143A29_0%,#0E2A1F_58%,#0D241B_100%)] p-4">
+                <div className="rounded-card border border-line bg-surface p-4">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-baseline gap-1">
-                      <span className="text-[14px] font-semibold tracking-[-0.02em]">
+                      <span className="font-sans text-body font-semibold text-ink">
                         BCC
                       </span>
-                      <span className="text-[12px] text-[#A9CBB9]">Bank</span>
+                      <span className="text-meta text-muted">Bank</span>
                     </div>
-                    <span className="rounded-full border border-[#34D399]/25 bg-[#06110C]/40 px-2 py-0.5 text-[9.5px] text-[#A7F3D0]">
+                    <span className="shrink-0 rounded-full border border-line bg-raised px-2 py-0.5 text-meta text-ink-soft">
                       {role === "guardian"
                         ? t("ownerAccount")
                         : t("protectedProfile")}
                     </span>
                   </div>
 
-                  <p className="mt-5 text-[10px] text-[#8FB6A1]">
+                  <div
+                    className="mt-4 h-0.5 w-10 rounded-full bg-accent"
+                    aria-hidden="true"
+                  />
+                  <p className="mt-2 text-meta text-muted">
                     {t("balanceLabel")}
                   </p>
-                  <p className="mt-0.5 whitespace-nowrap text-[26px] font-medium leading-none tabular-nums tracking-[-0.02em] sm:text-[28px]">
+                  <p className="mt-1 whitespace-nowrap font-sans text-[28px] font-semibold leading-none tabular-nums text-ink">
                     {formatKzt(activeBalance)}
                   </p>
 
                   <div className="mt-4 flex items-end justify-between gap-3">
                     <div>
-                      <p className="font-mono text-[11px] tracking-[0.06em] text-[#B8D4C5]">
+                      <p className="whitespace-nowrap font-mono text-meta tabular-nums text-ink-soft">
                         {role === "protected"
                           ? "4400 43** **** 3109"
                           : OWN_CARD}
                       </p>
-                      <p className="mt-1 text-[9px] text-[#648975]">
+                      <p className="mt-1 text-secondary text-muted">
                         Дебетовая карта · KZT
                       </p>
                     </div>
-                    <div className="flex items-center gap-2 text-[#34D399]/80">
-                      <span className="h-5 w-7 rounded-[4px] border border-[#34D399]/30 bg-[#34D399]/10" />
+                    <div className="flex items-center gap-2 text-muted">
+                      <span className="h-5 w-7 rounded-control border border-line bg-raised" />
                       <CreditCard size={18} strokeWidth={1.7} />
                     </div>
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-[#1E4233] bg-[#122B21]/55 p-4">
+                <div className="rounded-card border border-line bg-surface p-4">
                   <div className="flex items-center justify-between gap-2">
-                    <label className="text-[11px] font-medium text-[#A9CBB9]">
+                    <label className="text-meta font-medium text-muted">
                       {t("recipientLabel")}
                     </label>
                     <span
-                      className={`inline-flex items-center gap-1.5 text-[9.5px] ${
+                      className={`inline-flex items-center gap-1.5 text-meta ${
                         recipientMode === "trusted"
-                          ? "text-[#6EE7B7]"
-                          : "text-[#FCD34D]"
+                          ? "text-safe-ink"
+                          : "text-warn-ink"
                       }`}
                     >
                       <span
                         className={`h-1.5 w-1.5 rounded-full ${
                           recipientMode === "trusted"
-                            ? "bg-[#10B981]"
-                            : "bg-[#F59E0B]"
+                            ? "bg-safe"
+                            : "bg-warn"
                         }`}
                       />
                       {recipientMode === "trusted"
@@ -3717,21 +3721,21 @@ export default function Page() {
                     </span>
                   </div>
 
-                  <div className="mt-2 grid grid-cols-2 gap-1 rounded-xl border border-[#1E4233] bg-[#0B1F17] p-1">
+                  <div className="mt-3 grid grid-cols-2 gap-1 rounded-control border border-line bg-raised p-1">
                     <button
                       type="button"
                       aria-pressed={recipientMode === "trusted"}
                       onClick={() => selectRecipient("trusted")}
-                      className={`rounded-lg px-2.5 py-2 text-left transition-colors ${
+                      className={`rounded-control px-3 py-2 text-left transition-colors ${
                         recipientMode === "trusted"
-                          ? "bg-[#163527] text-[#E8F5EE] shadow-[inset_0_0_0_1px_rgba(52,211,153,0.16)]"
-                          : "text-[#7FA793] hover:text-[#E8F5EE]"
+                          ? "bg-accent-soft text-ink ring-1 ring-accent/[0.16]"
+                          : "text-muted hover:text-ink"
                       }`}
                     >
-                      <span className="block text-[11px] font-medium">
+                      <span className="block text-body font-semibold">
                         {t("trustedContact")}
                       </span>
-                      <span className="mt-0.5 block text-[9.5px] text-[#7FA793]">
+                      <span className="mt-1 block text-meta text-ink-soft">
                         {t("trustedHint")}
                       </span>
                     </button>
@@ -3739,16 +3743,16 @@ export default function Page() {
                       type="button"
                       aria-pressed={recipientMode === "unknown"}
                       onClick={() => selectRecipient("unknown")}
-                      className={`rounded-lg px-2.5 py-2 text-left transition-colors ${
+                      className={`rounded-control px-3 py-2 text-left transition-colors ${
                         recipientMode === "unknown"
-                          ? "bg-[#163527] text-[#E8F5EE] shadow-[inset_0_0_0_1px_rgba(52,211,153,0.16)]"
-                          : "text-[#7FA793] hover:text-[#E8F5EE]"
+                          ? "bg-accent-soft text-ink ring-1 ring-accent/[0.16]"
+                          : "text-muted hover:text-ink"
                       }`}
                     >
-                      <span className="block text-[11px] font-medium">
+                      <span className="block text-body font-semibold">
                         {t("unknownRecipient")}
                       </span>
-                      <span className="mt-0.5 block text-[9.5px] text-[#7FA793]">
+                      <span className="mt-1 block text-meta text-ink-soft">
                         {t("dropperCard")}
                       </span>
                     </button>
@@ -3756,7 +3760,7 @@ export default function Page() {
 
                   <label
                     htmlFor="recipient-card"
-                    className="mt-3 block text-[10px] text-[#7FA793]"
+                    className="mt-3 block text-meta text-muted"
                   >
                     {t("cardLabel")}
                   </label>
@@ -3768,13 +3772,13 @@ export default function Page() {
                     inputMode="numeric"
                     autoComplete="off"
                     placeholder="4400 0000 0000 0000"
-                    className="mt-1 h-11 w-full rounded-xl border border-[#1E4233] bg-[#0B1F17] px-3 font-mono text-[13px] tracking-[0.04em] text-[#E8F5EE] outline-none transition-colors placeholder:text-[#648975] focus:border-[#00A859]/70"
+                    className="mt-1 h-11 w-full rounded-control border border-line bg-surface px-3 font-mono text-base text-ink outline-none transition-colors placeholder:text-muted focus:border-accent"
                   />
 
                   <button
                     type="button"
                     onClick={pasteFromClipboard}
-                    className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-[#F59E0B]/30 bg-[#F59E0B]/8 px-2.5 py-2 text-[10.5px] text-[#FCD34D] transition-colors hover:bg-[#F59E0B]/12"
+                    className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-control border border-warn/35 bg-warn-soft px-3 text-meta font-medium text-warn-ink transition-colors hover:bg-warn/20"
                   >
                     <ClipboardPaste size={13} />
                     {t("pasteWhatsApp")}
@@ -3782,11 +3786,11 @@ export default function Page() {
 
                   <label
                     htmlFor="transfer-amount"
-                    className="mt-3 block text-[10px] text-[#7FA793]"
+                    className="mt-3 block text-meta text-muted"
                   >
                     {t("amountLabel")}
                   </label>
-                  <div className="relative mt-1 flex h-12 items-center rounded-xl border border-[#1E4233] bg-[#0B1F17] px-3 transition-colors focus-within:border-[#00A859]/70">
+                  <div className="relative mt-1 flex h-12 items-center rounded-control border border-line bg-surface px-3 transition-colors focus-within:border-accent">
                     <input
                       id="transfer-amount"
                       value={
@@ -3798,14 +3802,14 @@ export default function Page() {
                       inputMode="numeric"
                       autoComplete="off"
                       placeholder="0"
-                      className="h-full w-full min-w-0 bg-transparent pr-8 text-[22px] font-medium tabular-nums text-[#E8F5EE] outline-none"
+                      className="h-full w-full min-w-0 bg-transparent pr-8 text-modal font-semibold tabular-nums text-ink outline-none"
                     />
-                    <span className="absolute right-3 text-[14px] text-[#7FA793]">
+                    <span className="absolute right-3 text-body text-muted">
                       ₸
                     </span>
                   </div>
 
-                  <div className="mt-2 grid grid-cols-3 gap-1.5">
+                  <div className="mt-2 grid grid-cols-3 gap-2">
                     {[15_000, 250_000, 450_000].map((quickAmount) => (
                       <button
                         key={quickAmount}
@@ -3814,7 +3818,7 @@ export default function Page() {
                           setAmountText(String(quickAmount));
                           setFormError("");
                         }}
-                        className="whitespace-nowrap rounded-lg border border-[#1E4233] bg-[#0B1F17] px-0.5 py-1.5 text-[10.5px] tabular-nums text-[#A9CBB9] transition-colors hover:border-[#34D399]/35 hover:text-[#E8F5EE]"
+                        className="h-11 whitespace-nowrap rounded-control border border-line bg-surface px-2 text-meta font-medium tabular-nums text-ink-soft transition-colors hover:border-accent/35 hover:text-ink"
                       >
                         {formatNumber(quickAmount)} ₸
                       </button>
@@ -3822,19 +3826,19 @@ export default function Page() {
                   </div>
 
                   <div
-                    className={`mt-3 flex items-center justify-between gap-2 rounded-xl border px-3 py-2.5 ${decisionMeta.badgeClass}`}
+                    className={`mt-3 flex min-h-12 flex-wrap items-center justify-between gap-2 rounded-control border px-3 py-2 ${RISK_BADGE_TONE[risk.decision].badge}`}
                   >
-                    <span className="flex items-center gap-1.5 text-[10.5px]">
+                    <span className="flex shrink-0 items-center gap-2 text-meta">
                       <Gauge size={13} />
                       {t("riskPreview")}
                     </span>
-                    <span className="font-mono text-[11.5px] font-medium tabular-nums">
+                    <span className="ml-auto shrink-0 whitespace-nowrap text-meta font-medium tabular-nums">
                       {risk.score}/100 · {t(DECISION_KEY[risk.decision])}
                     </span>
                   </div>
 
                   {formError && (
-                    <p className="mt-2 flex items-center gap-1.5 text-[10.5px] text-[#FCA5A5]">
+                    <p className="mt-2 flex items-center gap-2 text-meta text-danger-ink">
                       <AlertTriangle size={12} />
                       {formError}
                     </p>
@@ -3843,47 +3847,47 @@ export default function Page() {
                   <button
                     type="button"
                     onClick={handleTransfer}
-                    className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#00A859] text-[14px] font-semibold text-[#04130C] transition-colors hover:bg-[#10B981] active:scale-[0.99]"
+                    className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-control bg-accent text-body font-semibold text-accent-ink transition-colors hover:bg-accent-strong active:scale-[0.99]"
                   >
                     <Send size={16} />
                     {t("sendButton")}
                   </button>
                 </div>
 
-                <div className="rounded-2xl border border-[#1E4233] bg-[#0B1F17] p-4">
+                <div className="rounded-card border border-line bg-surface p-4">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-[11.5px] font-medium text-[#A9CBB9]">
+                    <h3 className="text-section font-semibold text-ink">
                       {t("recentOps")}
                     </h3>
-                    <span className="font-mono text-[9.5px] text-[#648975]">
+                    <span className="font-mono text-meta tabular-nums text-muted">
                       {transfers.length}
                     </span>
                   </div>
 
                   {transfers.length === 0 ? (
-                    <div className="mt-2.5 flex items-center gap-2 rounded-lg border border-dashed border-[#1E4233] px-3 py-3 text-[10.5px] text-[#7FA793]">
-                      <Clock3 size={13} />
+                    <div className="mt-3 flex min-h-12 items-center gap-2 rounded-control border border-dashed border-line px-3 text-secondary text-muted">
+                      <Clock3 size={14} />
                       {t("noOps")}
                     </div>
                   ) : (
-                    <ul className="mt-2.5 space-y-2">
+                    <ul className="mt-3 space-y-2">
                       {transfers.map((transfer) => (
                         <li
                           key={transfer.id}
-                          className="flex items-center gap-2.5"
+                          className="flex min-h-12 items-center gap-3"
                         >
-                          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[#122B21] text-[#34D399]">
-                            <ArrowLeftRight size={13} />
+                          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-control bg-accent-soft text-accent">
+                            <ArrowLeftRight size={14} />
                           </span>
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-[11px] text-[#E8F5EE]">
+                            <p className="truncate text-body font-semibold text-ink">
                               {transfer.recipient}
                             </p>
-                            <p className="text-[9px] text-[#648975]">
+                            <p className="text-meta text-muted">
                               {transfer.timeLabel} · {transfer.status}
                             </p>
                           </div>
-                          <span className="shrink-0 whitespace-nowrap font-mono text-[11px] tabular-nums text-[#CFE8DC]">
+                          <span className="shrink-0 whitespace-nowrap font-mono text-secondary font-medium tabular-nums text-ink">
                             −{formatKzt(transfer.amount)}
                           </span>
                         </li>
