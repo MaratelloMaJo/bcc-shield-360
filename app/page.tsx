@@ -3674,7 +3674,7 @@ export default function Page() {
                   <p className="mt-2 text-meta text-muted">
                     {t("balanceLabel")}
                   </p>
-                  <p className="mt-1 whitespace-nowrap font-sans text-[28px] font-semibold leading-none tabular-nums text-ink">
+                  <p className="mt-1 whitespace-nowrap font-sans text-amount font-semibold tabular-nums text-ink">
                     {formatKzt(activeBalance)}
                   </p>
 

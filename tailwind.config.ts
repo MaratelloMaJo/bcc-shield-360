@@ -63,6 +63,7 @@ const config: Config = {
       },
       fontSize: {
         screen: ["24px", { lineHeight: "29px", letterSpacing: "-0.01em" }],
+        amount: ["28px", { lineHeight: "34px" }],
         modal: ["20px", { lineHeight: "26px" }],
         score: ["40px", { lineHeight: "40px" }],
         section: ["16px", { lineHeight: "22px" }],
