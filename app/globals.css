@@ -146,21 +146,21 @@ textarea::placeholder {
 }
 
 .scam-mark-critical {
-  background: rgb(var(--bcc-danger) / 0.18);
+  background: rgb(var(--bcc-danger-soft));
   color: rgb(var(--bcc-danger-ink));
   box-shadow: inset 0 -1px 0 rgb(var(--bcc-danger) / 0.55);
 }
 
 .scam-mark-high {
-  background: rgb(var(--bcc-warn) / 0.16);
+  background: rgb(var(--bcc-warn-soft));
   color: rgb(var(--bcc-warn-ink));
   box-shadow: inset 0 -1px 0 rgb(var(--bcc-warn) / 0.5);
 }
 
 .scam-mark-medium {
-  background: rgb(var(--bcc-safe) / 0.12);
-  color: rgb(var(--bcc-safe-ink));
-  box-shadow: inset 0 -1px 0 rgb(var(--bcc-safe) / 0.4);
+  background: rgb(var(--bcc-accent-soft));
+  color: rgb(var(--bcc-accent-strong));
+  box-shadow: inset 0 -1px 0 rgb(var(--bcc-accent) / 0.4);
 }
 
 /* CSS-only checkerboard used to make the receipt QR feel like a print artifact. */

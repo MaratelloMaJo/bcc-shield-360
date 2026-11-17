@@ -738,9 +738,9 @@ const SEVERITY_CLASS: Record<ScamSeverity, string> = {
 };
 
 const SEVERITY_LABEL_CLASS: Record<ScamSeverity, string> = {
-  critical: "border-[#EF4444]/35 bg-[#EF4444]/10 text-[#FCA5A5]",
-  high: "border-[#F59E0B]/35 bg-[#F59E0B]/10 text-[#FCD34D]",
-  medium: "border-[#34D399]/30 bg-[#34D399]/10 text-[#A7F3D0]",
+  critical: "border-danger/35 bg-danger-soft text-danger-ink",
+  high: "border-warn/35 bg-warn-soft text-warn-ink",
+  medium: "border-accent/30 bg-accent-soft text-accent-strong",
 };
 
 /* -------------------------------------------------------------------------- */
@@ -4635,18 +4635,18 @@ export default function Page() {
             )}
 
             {tab === "scam" && (
-              <section className="animate-fade-rise space-y-3 pb-2">
-                <div className="rounded-2xl border border-[#1E4233] bg-[#122B21]/55 p-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <h2 className="text-[13px] font-medium">
+              <section className="animate-fade-rise space-y-4 pb-2">
+                <div className="rounded-card border border-line bg-surface p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h2 className="text-section font-semibold text-ink">
                         {t("scannerInputTitle")}
                       </h2>
-                      <p className="mt-0.5 text-[9.5px] text-[#7FA793]">
+                      <p className="mt-1 text-meta text-muted">
                         {t("scannerInputHint")}
                       </p>
                     </div>
-                    <span className="rounded-md border border-[#1E4233] bg-[#0B1F17] px-1.5 py-0.5 font-mono text-[8px] text-[#648975]">
+                    <span className="shrink-0 rounded-full border border-line bg-raised px-2 py-1 font-mono text-meta text-ink-soft">
                       SCAM v2
                     </span>
                   </div>
@@ -4661,11 +4661,13 @@ export default function Page() {
                     rows={5}
                     maxLength={8000}
                     placeholder="Вставьте подозрительное сообщение целиком. Чем больше текста, тем точнее разбор приемов давления."
-                    className="bcc-scroll mt-2.5 min-h-[112px] w-full resize-y rounded-xl border border-[#1E4233] bg-[#06110C] p-3 text-[12px] leading-relaxed text-[#E8F5EE] outline-none transition-colors placeholder:text-[#648975] focus:border-[#00A859]/70"
+                    className="bcc-scroll mt-3 min-h-[112px] w-full resize-y rounded-control border border-line bg-surface p-3 text-base leading-relaxed text-ink outline-none transition-colors placeholder:text-muted focus:border-accent"
                   />
 
-                  <div className="mt-1 flex items-center justify-between text-[9px] text-[#648975]">
-                    <span>{scamText.length} символов</span>
+                  <div className="mt-1 flex min-h-11 items-center justify-between gap-3 text-meta text-muted">
+                    <span className="tabular-nums">
+                      {scamText.length} символов
+                    </span>
                     {scamText.length > 0 && (
                       <button
                         type="button"
@@ -4674,24 +4676,24 @@ export default function Page() {
                           setScamResult(null);
                           setScamError("");
                         }}
-                        className="text-[#7FA793] transition-colors hover:text-[#E8F5EE]"
+                        className="inline-flex min-h-11 items-center rounded-control px-2 text-meta font-medium text-ink-soft transition-colors hover:bg-raised hover:text-ink"
                       >
                         Очистить
                       </button>
                     )}
                   </div>
 
-                  <div className="mt-2.5 flex items-start gap-1.5 rounded-lg border border-[#34D399]/25 bg-[#34D399]/8 px-2.5 py-2">
+                  <div className="mt-3 flex items-start gap-2 rounded-control border border-safe/35 bg-safe-soft px-3 py-2">
                     <ShieldCheck
-                      size={12}
-                      className="mt-0.5 shrink-0 text-[#34D399]"
+                      size={16}
+                      className="mt-0.5 shrink-0 text-safe"
                     />
                     <div className="min-w-0">
-                      <p className="text-[8.5px] leading-snug text-[#A7F3D0]">
+                      <p className="text-meta leading-snug text-safe-ink">
                         {t("piiBadge")}
                       </p>
                       {scamResult && scamResult.pii.length > 0 && (
-                        <p className="mt-1 font-mono text-[8px] text-[#6EE7B7]">
+                        <p className="mt-1 font-mono text-meta tabular-nums text-safe-ink">
                           {scamResult.pii
                             .map(
                               (finding) =>
@@ -4703,7 +4705,7 @@ export default function Page() {
                     </div>
                   </div>
 
-                  <div className="mt-2.5 space-y-1.5">
+                  <div className="mt-3 space-y-2">
                     {SCAM_PRESETS.map((preset) => {
                       const Icon = PRESET_ICONS[preset.id] ?? MessageSquareWarning;
                       return (
@@ -4715,17 +4717,17 @@ export default function Page() {
                             setScamResult(null);
                             setScamError("");
                           }}
-                          className="flex w-full items-start gap-2 rounded-lg border border-[#1E4233] bg-[#0B1F17] px-2.5 py-2 text-left transition-colors hover:border-[#34D399]/30"
+                          className="flex min-h-11 w-full items-start gap-3 rounded-control border border-line bg-raised px-3 py-2 text-left transition-colors hover:border-line-strong"
                         >
                           <Icon
-                            size={13}
-                            className="mt-0.5 shrink-0 text-[#34D399]"
+                            size={16}
+                            className="mt-0.5 shrink-0 text-accent"
                           />
                           <span className="min-w-0">
-                            <span className="block text-[10.5px] font-medium text-[#E8F5EE]">
+                            <span className="block text-body font-semibold text-ink">
                               {preset.label}
                             </span>
-                            <span className="mt-0.5 block text-[9px] text-[#7FA793]">
+                            <span className="mt-0.5 block text-meta text-muted">
                               {preset.short}
                             </span>
                           </span>
@@ -4738,12 +4740,12 @@ export default function Page() {
                     type="button"
                     onClick={() => void runScamAnalysis()}
                     disabled={scamLoading}
-                    className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#00A859] text-[12px] font-semibold text-[#04130C] transition-colors hover:bg-[#10B981] disabled:opacity-60"
+                    className="mt-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-control bg-accent px-3 text-body font-semibold text-accent-ink transition-colors hover:bg-accent-strong disabled:opacity-60"
                   >
                     {scamLoading ? (
-                      <Loader2 size={15} className="animate-spin" />
+                      <Loader2 size={16} className="animate-spin" />
                     ) : (
-                      <Fingerprint size={15} />
+                      <Fingerprint size={16} />
                     )}
                     {scamLoading
                       ? t("analyzingButton")
@@ -4751,8 +4753,8 @@ export default function Page() {
                   </button>
 
                   {scamError && (
-                    <p className="mt-2 flex items-start gap-1.5 text-[9.5px] leading-snug text-[#FCD34D]">
-                      <AlertTriangle size={11} className="mt-0.5 shrink-0" />
+                    <p className="mt-3 flex items-start gap-2 text-meta leading-snug text-warn-ink">
+                      <AlertTriangle size={14} className="mt-0.5 shrink-0" />
                       {scamError}
                     </p>
                   )}
@@ -4770,63 +4772,62 @@ export default function Page() {
                       ).values(),
                     );
                     return (
-                      <div className="animate-fade-rise rounded-2xl border border-[#1E4233] bg-[#0B1F17] p-4">
+                      <div className="animate-fade-rise rounded-card border border-line bg-surface p-4">
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
-                            <p className="text-[9px] text-[#7FA793]">
+                            <p className="text-meta text-muted">
                               {t("probabilityLabel")}
                             </p>
                             <p
-                              className={`mt-0.5 font-mono text-[34px] font-medium leading-none tabular-nums ${tone.text}`}
+                              className={`mt-1 font-sans text-score font-semibold leading-none tabular-nums ${tone.text}`}
                             >
                               {scamResult.score}
-                              <span className="text-[13px] text-[#648975]">
+                              <span className="ml-1 align-baseline font-sans text-body font-normal text-muted">
                                 %
                               </span>
                             </p>
                           </div>
                           <span
-                            className={`max-w-[170px] rounded-md border px-2 py-1 text-right text-[9px] leading-snug ${tone.badge}`}
+                            className={`max-w-[170px] shrink-0 rounded-full border px-2 py-1 text-right text-meta font-medium leading-snug ${tone.badge}`}
                           >
                             {scamResult.category}
                           </span>
                         </div>
 
-                        <div className="mt-2.5 h-2 overflow-hidden rounded-full border border-[#1E4233] bg-[#06110C]">
+                        <div className="mt-3 h-2 overflow-hidden rounded-full border border-line bg-raised">
                           <div
-                            className="h-full origin-left rounded-full transition-transform duration-500"
+                            className={`h-full origin-left rounded-full transition-transform duration-500 ${tone.bar}`}
                             style={{
-                              backgroundColor: tone.hex,
                               transform: `scaleX(${scamResult.score / 100})`,
                             }}
                           />
                         </div>
 
                         <p
-                          className={`mt-2.5 text-[11px] font-medium leading-snug ${tone.text}`}
+                          className={`mt-3 text-body font-semibold leading-snug ${tone.text}`}
                         >
                           {scamResult.verdict}
                         </p>
-                        <p className="mt-1 text-[10px] leading-relaxed text-[#A9CBB9]">
+                        <p className="mt-1 text-secondary leading-relaxed text-ink-soft">
                           {scamResult.summary}
                         </p>
 
-                        <div className="mt-2 flex flex-wrap gap-1.5">
-                          <span className="rounded-md border border-[#1E4233] bg-[#122B21] px-1.5 py-0.5 text-[8px] text-[#A9CBB9]">
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <span className="rounded-full border border-line bg-raised px-3 py-1 text-meta text-ink-soft">
                             {scamResult.aiAssisted
                               ? "LLM + правила"
                               : "Матрица паттернов РК"}
                           </span>
-                          <span className="rounded-md border border-[#1E4233] bg-[#122B21] px-1.5 py-0.5 text-[8px] text-[#A9CBB9]">
+                          <span className="rounded-full border border-line bg-raised px-3 py-1 text-meta tabular-nums text-ink-soft">
                             {scamResult.triggers.length} триггеров
                           </span>
                         </div>
 
-                        <div className="mt-3 rounded-xl border border-[#1E4233] bg-[#06110C] p-3">
-                          <p className="text-[8.5px] text-[#648975]">
+                        <div className="mt-4 rounded-control border border-line bg-paper p-3">
+                          <p className="text-meta text-muted">
                             {t("maskedTextLabel")}
                           </p>
-                          <p className="mt-1.5 text-[10.5px] leading-relaxed text-[#CFE8DC]">
+                          <p className="mt-2 text-body leading-relaxed text-ink">
                             {scamSegments.length === 0
                               ? scamResult.maskedText
                               : scamSegments.map((segment, index) =>
@@ -4850,14 +4851,14 @@ export default function Page() {
                                 )}
                           </p>
                           {scamResult.pii.length > 0 && (
-                            <div className="mt-2 flex flex-wrap gap-1">
-                              <span className="rounded border border-[#34D399]/30 bg-[#34D399]/10 px-1.5 py-0.5 text-[7.5px] text-[#A7F3D0]">
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              <span className="rounded-full border border-safe/35 bg-safe-soft px-2 py-1 text-meta text-safe-ink">
                                 PII redacted on-device
                               </span>
                               {scamResult.pii.map((finding) => (
                                 <span
                                   key={finding.type}
-                                  className="rounded border border-[#1E4233] bg-[#122B21] px-1.5 py-0.5 text-[7.5px] text-[#A9CBB9]"
+                                  className="rounded-full border border-line bg-raised px-2 py-1 text-meta tabular-nums text-ink-soft"
                                 >
                                   {finding.label} × {finding.count}
                                 </span>
@@ -4867,27 +4868,27 @@ export default function Page() {
                         </div>
 
                         {scamResult.triggers.length > 0 && (
-                          <div className="mt-3 space-y-1.5">
-                            <p className="text-[9px] font-medium text-[#7FA793]">
+                          <div className="mt-4 space-y-2">
+                            <p className="text-body font-semibold text-ink">
                               {t("triggersLabel")}
                             </p>
                             {uniqueTriggers.map((trigger, index) => (
                               <div
                                 key={`${trigger.patternId}-${index}`}
-                                className={`rounded-lg border px-2.5 py-2 ${SEVERITY_LABEL_CLASS[trigger.severity]}`}
+                                className={`rounded-control border px-3 py-2 ${SEVERITY_LABEL_CLASS[trigger.severity]}`}
                               >
                                 <div className="flex items-start justify-between gap-2">
-                                  <p className="text-[9.5px] font-medium">
+                                  <p className="text-secondary font-semibold">
                                     {trigger.label}
                                   </p>
-                                  <span className="shrink-0 font-mono text-[8px] opacity-80">
+                                  <span className="shrink-0 font-mono text-meta tabular-nums">
                                     +{trigger.weight}
                                   </span>
                                 </div>
-                                <p className="mt-0.5 text-[9px] text-[#CFE8DC]">
+                                <p className="mt-1 text-meta text-ink-soft">
                                   «{trigger.phrase}»
                                 </p>
-                                <p className="mt-1 text-[9px] leading-snug text-[#A9CBB9]">
+                                <p className="mt-1 text-meta leading-snug text-ink-soft">
                                   {trigger.explanation}
                                 </p>
                               </div>
@@ -4895,15 +4896,15 @@ export default function Page() {
                           </div>
                         )}
 
-                        <ul className="mt-3 space-y-1.5">
+                        <ul className="mt-4 space-y-2">
                           {scamResult.advice.map((item) => (
                             <li
                               key={item}
-                              className="flex items-start gap-1.5 text-[9.5px] leading-snug text-[#C4DDD1]"
+                              className="flex items-start gap-2 text-secondary leading-snug text-ink-soft"
                             >
                               <CheckCircle2
-                                size={11}
-                                className="mt-0.5 shrink-0 text-[#34D399]"
+                                size={14}
+                                className="mt-0.5 shrink-0 text-safe"
                               />
                               {item}
                             </li>
@@ -4914,16 +4915,16 @@ export default function Page() {
                           type="button"
                           onClick={activateScannerProtection}
                           disabled={recentScamAlert}
-                          className={`mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-[10.5px] font-medium transition-colors ${
+                          className={`mt-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-control px-3 text-body font-semibold transition-colors ${
                             recentScamAlert
-                              ? "border border-[#10B981]/40 bg-[#10B981]/10 text-[#A7F3D0]"
-                              : "bg-[#00A859] text-[#04130C] hover:bg-[#10B981]"
+                              ? "border border-safe/35 bg-safe-soft text-safe-ink"
+                              : "bg-accent text-accent-ink hover:bg-accent-strong"
                           }`}
                         >
                           {recentScamAlert ? (
-                            <CheckCircle2 size={14} />
+                            <CheckCircle2 size={16} />
                           ) : (
-                            <Zap size={14} />
+                            <Zap size={16} />
                           )}
                           {recentScamAlert
                             ? t("protectionActive")
@@ -5132,33 +5133,26 @@ function phishTone(status: PhishStatus): { panel: string; text: string } {
 function scamTone(score: number): {
   text: string;
   badge: string;
-  hex: string;
+  bar: string;
 } {
   if (score >= 75) {
     return {
-      text: "text-[#FCA5A5]",
-      badge: "border-[#EF4444]/40 bg-[#EF4444]/10 text-[#FECACA]",
-      hex: "#EF4444",
-    };
-  }
-  if (score >= 45) {
-    return {
-      text: "text-[#FCD34D]",
-      badge: "border-[#F59E0B]/40 bg-[#F59E0B]/10 text-[#FDE68A]",
-      hex: "#F59E0B",
+      text: "text-danger-ink",
+      badge: "border-danger/35 bg-danger-soft text-danger-ink",
+      bar: "bg-danger",
     };
   }
   if (score >= 30) {
     return {
-      text: "text-[#C4B5FD]",
-      badge: "border-[#8B5CF6]/40 bg-[#8B5CF6]/10 text-[#DDD6FE]",
-      hex: "#8B5CF6",
+      text: "text-warn-ink",
+      badge: "border-warn/35 bg-warn-soft text-warn-ink",
+      bar: "bg-warn",
     };
   }
   return {
-    text: "text-[#6EE7B7]",
-    badge: "border-[#10B981]/40 bg-[#10B981]/10 text-[#A7F3D0]",
-    hex: "#10B981",
+    text: "text-safe-ink",
+    badge: "border-safe/35 bg-safe-soft text-safe-ink",
+    bar: "bg-safe",
   };
 }
 
