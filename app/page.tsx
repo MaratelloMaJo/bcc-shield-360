@@ -313,9 +313,9 @@ const RU_DICT = {
   approveHold: "Одобрить и провести",
   blockHold: "Заблокировать перевод (Спасти средства)",
   guardianOnly: "Одобрение доступно Хранителю семьи",
-  holdPending: "НА ПОДТВЕРЖДЕНИИ",
-  holdApproved: "ПРОВЕДЕНО",
-  holdBlocked: "ЗАБЛОКИРОВАНО",
+  holdPending: "На подтверждении",
+  holdApproved: "Проведено",
+  holdBlocked: "Заблокировано",
   antiphishTitle: "Антифишинг-песочница",
   antiphishHint: "Проверка URL перед оплатой",
   sandboxVerdict: "Вердикт песочницы",
@@ -438,9 +438,9 @@ const KK_DICT: Record<DictKey, string> = {
   approveHold: "Мақұлдап, өткізу",
   blockHold: "Аударымды бұғаттау (Ақшаны сақтау)",
   guardianOnly: "Мақұлдау отбасы Қорғаушысына қолжетімді",
-  holdPending: "РАСТАУДА",
-  holdApproved: "ӨТКІЗІЛДІ",
-  holdBlocked: "БҰҒАТТАЛДЫ",
+  holdPending: "Растауда",
+  holdApproved: "Өткізілді",
+  holdBlocked: "Бұғатталды",
   antiphishTitle: "Антифишинг құмсалғышы",
   antiphishHint: "Төлем алдында URL тексеру",
   sandboxVerdict: "Құмсалғыш үкімі",
@@ -4314,7 +4314,10 @@ export default function Page() {
                         </span>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-start justify-between gap-2">
-                            <p className="truncate text-body font-semibold text-ink">
+                            <p
+                              className="min-w-0 line-clamp-2 text-body font-semibold text-ink"
+                              title={relative.name}
+                            >
                               {relative.name}
                             </p>
                             <span className="inline-flex shrink-0 items-center gap-2 text-meta text-safe-ink">
