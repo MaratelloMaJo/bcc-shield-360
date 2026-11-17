@@ -1,5 +1,27 @@
 import type { Metadata, Viewport } from "next";
+import { Golos_Text, Literata, Spline_Sans_Mono } from "next/font/google";
 import "./globals.css";
+
+const golos = Golos_Text({
+  subsets: ["cyrillic", "latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-golos",
+  display: "swap",
+});
+
+const literata = Literata({
+  subsets: ["cyrillic", "latin"],
+  weight: ["500", "600"],
+  variable: "--font-literata",
+  display: "swap",
+});
+
+const spline = Spline_Sans_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  variable: "--font-spline",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "BCC Shield 360 — активная киберзащита",
@@ -51,7 +73,10 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#06110C",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#F7F3EA" },
+    { media: "(prefers-color-scheme: dark)", color: "#0E1512" },
+  ],
 };
 
 export default function RootLayout({
@@ -60,17 +85,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ru" suppressHydrationWarning>
+    <html
+      lang="ru"
+      data-theme="light"
+      className={`${golos.variable} ${literata.variable} ${spline.variable}`}
+      suppressHydrationWarning
+    >
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-          rel="stylesheet"
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{if(localStorage.getItem("bcc_shield_360_theme_v1")==="dark"){document.documentElement.dataset.theme="dark";document.documentElement.style.colorScheme="dark";}}catch(e){}})();`,
+          }}
         />
       </head>
       <body>{children}</body>

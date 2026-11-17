@@ -38,6 +38,7 @@ import {
   Lock,
   MessageSquareWarning,
   Mic,
+  Moon,
   PhoneIncoming,
   PhoneOff,
   Radar,
@@ -49,6 +50,7 @@ import {
   ShieldCheck,
   Signal,
   Siren,
+  Sun,
   Timer,
   UserRound,
   Users,
@@ -64,6 +66,7 @@ import {
   type ScamSeverity,
   type ScamTrigger,
 } from "@/lib/scam-engine";
+import { readTheme, toggleTheme, type Theme } from "@/lib/theme";
 
 /* -------------------------------------------------------------------------- */
 /*  Domain types                                                              */
@@ -343,6 +346,8 @@ const RU_DICT = {
   resetDemo: "Сбросить демо к исходному состоянию",
   langRu: "RU",
   langKk: "ҚАЗ",
+  themeToDark: "Тёмная тема",
+  themeToLight: "Светлая тема",
 } as const;
 
 type DictKey = keyof typeof RU_DICT;
@@ -466,6 +471,8 @@ const KK_DICT: Record<DictKey, string> = {
   resetDemo: "Демоны бастапқы күйге қайтару",
   langRu: "RU",
   langKk: "ҚАЗ",
+  themeToDark: "Қараңғы тақырып",
+  themeToLight: "Жарық тақырып",
 };
 
 const DICT: Record<Lang, Record<DictKey, string>> = {
@@ -2356,6 +2363,7 @@ export default function Page() {
   const [sessionCode, setSessionCode] = useState("АЛТЫН-739");
 
   const [balance, setBalance] = useState(INITIAL_BALANCE);
+  const [theme, setTheme] = useState<Theme>("light");
   const [familyBalance, setFamilyBalance] = useState(INITIAL_FAMILY_BALANCE);
   const [transfers, setTransfers] = useState<TransferRecord[]>([]);
   const [holds, setHolds] = useState<HoldRequest[]>([]);
@@ -2446,6 +2454,11 @@ export default function Page() {
   /* Mark the client as mounted. Nothing reads storage or crypto before this. */
   useEffect(() => {
     setIsMounted(true);
+  }, []);
+
+  /* Theme has its own storage key; read it after mount so SSR stays light. */
+  useEffect(() => {
+    setTheme(readTheme());
   }, []);
 
   /*
@@ -3525,11 +3538,21 @@ export default function Page() {
                 >
                   <Zap size={14} />
                 </button>
+                <button
+                  type="button"
+                  aria-pressed={theme === "dark"}
+                  aria-label={t(theme === "dark" ? "themeToLight" : "themeToDark")}
+                  onClick={() => setTheme((v) => toggleTheme(v))}
+                  className="grid h-11 w-11 place-items-center"
+                >
+                  <span
+                    aria-hidden="true"
+                    className="grid h-8 w-8 place-items-center rounded-control text-ink"
+                  >
+                    {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+                  </span>
+                </button>
                 <LangSwitch lang={lang} onChange={setLang} compact />
-                <span className="hidden shrink-0 items-center gap-1.5 rounded-full border border-[#10B981]/30 bg-[#10B981]/10 px-2 py-1 text-[9.5px] text-[#6EE7B7] lg:inline-flex">
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#10B981]" />
-                  {t("protectionOn")}
-                </span>
               </div>
             </div>
 
