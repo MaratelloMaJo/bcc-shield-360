@@ -4248,38 +4248,37 @@ export default function Page() {
             )}
 
             {tab === "guardpay" && (
-              <section className="animate-fade-rise space-y-3 pb-2">
-                <div className="rounded-2xl border border-[#1E4233] bg-[#122B21]/55 p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-[9.5px] text-[#7FA793]">
-                        {t("familyMultisig")}
-                      </p>
-                      <h2 className="mt-0.5 text-[15px] font-medium">
-                        {t("guardCircle")}
-                      </h2>
-                    </div>
-                    <div className="rounded-xl border border-[#34D399]/25 bg-[#06110C]/50 px-2.5 py-1.5 text-right">
-                      <p className="text-[8.5px] text-[#7FA793]">
-                        {t("savedLabel")}
-                      </p>
-                      <p className="mt-0.5 whitespace-nowrap font-mono text-[12px] tabular-nums text-[#6EE7B7]">
-                        {formatKzt(savedTotal)}
-                      </p>
-                    </div>
+              <section className="animate-fade-rise space-y-6 pb-2">
+                <div className="rounded-card border border-line bg-surface p-4">
+                  <div className="min-w-0">
+                    <p className="text-meta text-muted">
+                      {t("familyMultisig")}
+                    </p>
+                    <h2 className="mt-1 text-section font-semibold text-ink">
+                      {t("guardCircle")}
+                    </h2>
                   </div>
 
-                  <div className="mt-3 grid grid-cols-2 gap-1 rounded-xl border border-[#1E4233] bg-[#0B1F17] p-1">
+                  <div className="mt-3 flex items-center justify-between gap-3 rounded-control border border-safe/35 bg-safe-soft px-3 py-2">
+                    <p className="text-meta font-medium text-safe-ink">
+                      {t("savedLabel")}
+                    </p>
+                    <p className="shrink-0 whitespace-nowrap font-sans text-section font-semibold tabular-nums text-safe-ink">
+                      {formatKzt(savedTotal)}
+                    </p>
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-2 gap-1 rounded-control border border-line bg-raised p-1">
                     <button
                       type="button"
                       aria-pressed={role === "guardian"}
                       onClick={() => {
                         if (role !== "guardian") toggleRole();
                       }}
-                      className={`rounded-lg px-2 py-2 text-[10.5px] font-medium transition-colors ${
+                      className={`flex min-h-11 items-center justify-center rounded-control px-3 text-meta font-semibold transition-colors ${
                         role === "guardian"
-                          ? "bg-[#163527] text-[#E8F5EE] shadow-[inset_0_0_0_1px_rgba(52,211,153,0.16)]"
-                          : "text-[#7FA793] hover:text-[#E8F5EE]"
+                          ? "bg-accent-soft text-ink ring-1 ring-accent/[0.16]"
+                          : "text-muted hover:text-ink"
                       }`}
                     >
                       {t("guardianTab")}
@@ -4290,80 +4289,82 @@ export default function Page() {
                       onClick={() => {
                         if (role !== "protected") toggleRole();
                       }}
-                      className={`rounded-lg px-2 py-2 text-[10.5px] font-medium transition-colors ${
+                      className={`flex min-h-11 items-center justify-center rounded-control px-3 text-meta font-semibold transition-colors ${
                         role === "protected"
-                          ? "bg-[#163527] text-[#E8F5EE] shadow-[inset_0_0_0_1px_rgba(52,211,153,0.16)]"
-                          : "text-[#7FA793] hover:text-[#E8F5EE]"
+                          ? "bg-accent-soft text-ink ring-1 ring-accent/[0.16]"
+                          : "text-muted hover:text-ink"
                       }`}
                     >
                       {t("protectedTab")}
                     </button>
                   </div>
 
-                  <ul className="mt-2.5 space-y-1.5">
+                  <ul className="mt-3 space-y-2">
                     {RELATIVES.map((relative) => (
                       <li
                         key={relative.name}
-                        className={`flex items-center gap-2.5 rounded-xl border px-2.5 py-2 ${
+                        className={`flex min-h-12 items-center gap-3 rounded-control border px-3 py-2 ${
                           relative.isApashka && role === "protected"
-                            ? "border-[#8B5CF6]/40 bg-[#8B5CF6]/10"
-                            : "border-transparent bg-[#0B1F17]/50"
+                            ? "border-guardian/35 bg-guardian-soft"
+                            : "border-line bg-raised"
                         }`}
                       >
-                        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-[#1E4233] bg-[#122B21] font-mono text-[9.5px] text-[#A9CBB9]">
+                        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-line bg-surface font-sans text-meta font-semibold text-ink-soft">
                           {relative.initials}
                         </span>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-[10.5px] text-[#E8F5EE]">
-                            {relative.name}
-                          </p>
-                          <p className="mt-0.5 text-[9px] text-[#7FA793]">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="truncate text-body font-semibold text-ink">
+                              {relative.name}
+                            </p>
+                            <span className="inline-flex shrink-0 items-center gap-2 text-meta text-safe-ink">
+                              <span className="h-1.5 w-1.5 rounded-full bg-safe" />
+                              защита
+                            </span>
+                          </div>
+                          <p className="mt-1 text-meta text-ink-soft">
                             {relative.age} лет · лимит{" "}
                             {formatKzt(relative.limit)} в день
                           </p>
                           {relative.isApashka && (
-                            <p className="mt-0.5 font-mono text-[8.5px] text-[#6EE7B7]">
+                            <p className="mt-1 text-meta tabular-nums text-ink-soft">
                               {lang === "kk" ? "Шот қалдығы" : "Остаток счета"}:{" "}
-                              {formatKzt(familyBalance)}
+                              <span className="font-semibold text-guardian-ink">
+                                {formatKzt(familyBalance)}
+                              </span>
                             </p>
                           )}
                         </div>
-                        <span className="inline-flex shrink-0 items-center gap-1 text-[8.5px] text-[#6EE7B7]">
-                          <span className="h-1 w-1 rounded-full bg-[#10B981]" />
-                          защита
-                        </span>
                       </li>
                     ))}
                   </ul>
                 </div>
 
-                <div className="rounded-2xl border border-[#1E4233] bg-[#0B1F17] p-4">
-                  <div className="flex items-center justify-between gap-2">
-                    <h2 className="text-[12px] font-medium">
-                      {t("requestsTitle")}
-                    </h2>
-                    <span
-                      className={`rounded-full border px-2 py-0.5 font-mono text-[9px] ${
-                        pendingHolds.length
-                          ? "border-[#F59E0B]/35 bg-[#F59E0B]/10 text-[#FCD34D]"
-                          : "border-[#1E4233] text-[#648975]"
-                      }`}
-                    >
-                      {pendingHolds.length} · HOLD_MULTISIG
-                    </span>
-                  </div>
+                <div className="rounded-card border border-line bg-surface p-4">
+                  <h2 className="text-section font-semibold text-ink">
+                    {t("requestsTitle")}
+                  </h2>
+                  <span
+                    className={`mt-2 inline-flex items-center rounded-full border px-2 py-1 font-mono text-hash tabular-nums ${
+                      pendingHolds.length
+                        ? "border-warn/35 bg-warn-soft text-warn-ink"
+                        : "border-line bg-raised text-muted"
+                    }`}
+                  >
+                    {pendingHolds.length} · HOLD_MULTISIG
+                  </span>
 
                   {guardError && (
-                    <p className="mt-2 flex items-center gap-1.5 text-[10px] text-[#FCA5A5]">
-                      <AlertTriangle size={11} />
+                    <p className="mt-3 flex items-start gap-2 text-meta text-danger-ink">
+                      <AlertTriangle size={12} className="mt-0.5 shrink-0" />
                       {guardError}
                     </p>
                   )}
 
-                  <div className="mt-2.5 space-y-2.5">
+                  <div className="mt-3 space-y-2">
                     {holds.length === 0 && (
-                      <div className="flex items-center gap-2 rounded-lg border border-dashed border-[#1E4233] px-3 py-3 text-[10.5px] text-[#7FA793]">
-                        <ShieldCheck size={13} />
+                      <div className="flex min-h-12 items-center gap-2 rounded-control border border-dashed border-line px-3 text-secondary text-muted">
+                        <ShieldCheck size={16} />
                         {t("noHolds")}
                       </div>
                     )}
@@ -4371,30 +4372,19 @@ export default function Page() {
                     {holds.map((hold) => (
                       <div
                         key={hold.id}
-                        className={`rounded-xl border p-3 ${
-                          hold.status === "pending"
-                            ? "border-[#F59E0B]/30 bg-[#F59E0B]/5"
-                            : hold.status === "approved"
-                              ? "border-[#10B981]/25 bg-[#10B981]/5"
-                              : "border-[#EF4444]/25 bg-[#EF4444]/5"
-                        }`}
+                        className="rounded-card border border-line bg-surface p-4"
                       >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <p className="text-[10px] text-[#7FA793]">
-                              {hold.fromAlias} → получатель
-                            </p>
-                            <p className="mt-0.5 text-[10.5px] leading-snug text-[#E8F5EE]">
-                              {hold.to}
-                            </p>
-                          </div>
+                        <div className="flex items-start justify-between gap-3">
+                          <p className="min-w-0 text-meta text-muted">
+                            {hold.fromAlias} → получатель
+                          </p>
                           <span
-                            className={`shrink-0 rounded-full border px-1.5 py-0.5 text-[8px] ${
+                            className={`shrink-0 rounded-full border px-2 py-1 text-meta font-medium ${
                               hold.status === "pending"
-                                ? "border-[#F59E0B]/35 text-[#FCD34D]"
+                                ? "border-warn/35 bg-warn-soft text-warn-ink"
                                 : hold.status === "approved"
-                                  ? "border-[#10B981]/35 text-[#6EE7B7]"
-                                  : "border-[#EF4444]/35 text-[#FCA5A5]"
+                                  ? "border-safe/35 bg-safe-soft text-safe-ink"
+                                  : "border-danger/35 bg-danger-soft text-danger-ink"
                             }`}
                           >
                             {hold.status === "pending"
@@ -4405,23 +4395,34 @@ export default function Page() {
                           </span>
                         </div>
 
-                        <p className="mt-2 whitespace-nowrap font-mono text-[19px] font-medium tabular-nums text-[#E8F5EE]">
+                        <p className="mt-1 text-body font-semibold leading-snug text-ink">
+                          {hold.to}
+                        </p>
+
+                        <p className="mt-3 whitespace-nowrap font-sans text-modal font-semibold tabular-nums text-ink">
                           {formatKzt(hold.amount)}
                         </p>
 
-                        <div className="mt-2 flex items-start gap-1.5 rounded-lg border border-[#F59E0B]/20 bg-[#F59E0B]/5 px-2 py-1.5">
+                        <div className="mt-3 flex items-start gap-2 rounded-control border border-warn/35 bg-warn-soft px-3 py-2">
                           <AlertTriangle
-                            size={11}
-                            className="mt-0.5 shrink-0 text-[#F59E0B]"
+                            size={14}
+                            className="mt-0.5 shrink-0 text-warn"
                           />
-                          <p className="text-[9px] leading-snug text-[#E7C98A]">
+                          <p className="text-meta leading-snug text-warn-ink">
                             {hold.reason}
                           </p>
                         </div>
 
-                        <p className="mt-1.5 font-mono text-[8.5px] text-[#648975]">
+                        <p className="mt-2 text-meta text-muted">
                           {hold.createdLabel}
-                          {hold.signature ? ` · ${hold.signature}` : ""}
+                          {hold.signature && (
+                            <>
+                              {" · "}
+                              <span className="break-all font-mono text-hash tabular-nums">
+                                {hold.signature}
+                              </span>
+                            </>
+                          )}
                         </p>
 
                         {hold.status === "blocked" && (
@@ -4443,30 +4444,30 @@ export default function Page() {
                                 ],
                               })
                             }
-                            className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-lg border border-[#34D399]/40 bg-[#34D399]/10 px-2 py-2 text-[9.5px] font-medium text-[#A7F3D0] transition-colors hover:bg-[#34D399]/16"
+                            className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-control border border-accent/30 bg-accent-soft px-3 py-2 text-secondary font-semibold leading-snug text-accent-strong transition-colors hover:border-accent"
                           >
-                            <Building2 size={12} />
+                            <Building2 size={16} className="shrink-0" />
                             {t("reportCta")}
                           </button>
                         )}
 
                         {hold.status === "pending" &&
                           role === "guardian" && (
-                            <div className="mt-2.5 space-y-1.5">
+                            <div className="mt-3 space-y-2">
                               <button
                                 type="button"
                                 onClick={() => void approveHold(hold)}
-                                className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#00A859] px-2 py-2 text-[10px] font-semibold text-[#04130C] transition-colors hover:bg-[#10B981]"
+                                className="flex min-h-11 w-full items-center justify-center gap-2 rounded-control bg-accent px-3 py-2 text-body font-semibold leading-snug text-accent-ink transition-colors hover:bg-accent-strong"
                               >
-                                <Check size={12} />
+                                <Check size={16} className="shrink-0" />
                                 {t("approveHold")}
                               </button>
                               <button
                                 type="button"
                                 onClick={() => blockHold(hold)}
-                                className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-[#EF4444]/40 bg-[#EF4444]/10 px-2 py-2 text-[10px] font-medium text-[#FCA5A5] transition-colors hover:bg-[#EF4444]/15"
+                                className="flex min-h-11 w-full items-center justify-center gap-2 rounded-control border border-danger/35 bg-danger-soft px-3 py-2 text-body font-semibold leading-snug text-danger-ink transition-colors hover:border-danger"
                               >
-                                <Ban size={12} />
+                                <Ban size={16} className="shrink-0" />
                                 {t("blockHold")}
                               </button>
                             </div>
@@ -4474,8 +4475,8 @@ export default function Page() {
 
                         {hold.status === "pending" &&
                           role === "protected" && (
-                            <p className="mt-2 flex items-center gap-1.5 text-[9px] text-[#A9CBB9]">
-                              <Lock size={10} />
+                            <p className="mt-3 flex items-center gap-2 text-meta text-muted">
+                              <Lock size={14} className="shrink-0" />
                               {t("guardianOnly")}
                             </p>
                           )}
@@ -4484,16 +4485,16 @@ export default function Page() {
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-[#1E4233] bg-[#0B1F17] p-4">
-                  <div className="flex items-start gap-2">
-                    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[#122B21] text-[#34D399]">
-                      <Link2 size={15} />
+                <div className="rounded-card border border-line bg-surface p-4">
+                  <div className="flex items-center gap-3">
+                    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-control bg-accent-soft text-accent">
+                      <Link2 size={16} />
                     </span>
-                    <div>
-                      <h2 className="text-[12px] font-medium">
+                    <div className="min-w-0">
+                      <h2 className="text-section font-semibold text-ink">
                         {t("antiphishTitle")}
                       </h2>
-                      <p className="mt-0.5 text-[9.5px] text-[#7FA793]">
+                      <p className="mt-1 text-secondary text-muted">
                         {t("antiphishHint")}
                       </p>
                     </div>
@@ -4504,7 +4505,7 @@ export default function Page() {
                       event.preventDefault();
                       runPhishCheck();
                     }}
-                    className="mt-3 flex gap-1.5"
+                    className="mt-4 flex gap-2"
                   >
                     <input
                       value={phishUrl}
@@ -4514,33 +4515,33 @@ export default function Page() {
                       }}
                       placeholder="https://example.kz/pay"
                       aria-label="Ссылка для проверки"
-                      className="h-10 min-w-0 flex-1 rounded-lg border border-[#1E4233] bg-[#06110C] px-2.5 font-mono text-[10.5px] text-[#E8F5EE] outline-none transition-colors focus:border-[#00A859]/70"
+                      className="h-11 min-w-0 flex-1 rounded-control border border-line bg-surface px-3 font-mono text-base text-ink outline-none transition-colors placeholder:text-muted focus:border-accent"
                     />
                     <button
                       type="submit"
                       aria-label="Проверить ссылку"
-                      className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-[#34D399]/35 bg-[#34D399]/10 text-[#A7F3D0] transition-colors hover:bg-[#34D399]/15"
+                      className="grid h-11 w-11 shrink-0 place-items-center rounded-control bg-accent text-accent-ink transition-colors hover:bg-accent-strong"
                     >
-                      <Search size={15} />
+                      <Search size={18} />
                     </button>
                   </form>
 
-                  <div className="mt-2 grid grid-cols-2 gap-1.5">
+                  <div className="mt-3 grid grid-cols-2 gap-2">
                     {PHISH_PRESETS.map((preset) => (
                       <button
                         key={preset.url}
                         type="button"
                         onClick={() => runPhishCheck(preset.url)}
-                        className="flex min-w-0 items-center gap-1.5 rounded-lg border border-[#1E4233] bg-[#06110C] px-2 py-1.5 text-left transition-colors hover:border-[#34D399]/30"
+                        className="flex min-h-11 min-w-0 items-center gap-2 rounded-control border border-line px-3 py-2 text-left transition-colors hover:border-line-strong hover:bg-raised"
                       >
                         <span
                           className={`h-1.5 w-1.5 shrink-0 rounded-full ${
                             preset.status === "safe"
-                              ? "bg-[#10B981]"
-                              : "bg-[#EF4444]"
+                              ? "bg-safe"
+                              : "bg-danger"
                           }`}
                         />
-                        <span className="truncate font-mono text-[9px] text-[#A9CBB9]">
+                        <span className="truncate font-mono text-meta text-ink-soft">
                           {preset.url}
                         </span>
                       </button>
@@ -4552,71 +4553,73 @@ export default function Page() {
                       const tone = phishTone(phishResult.status);
                       return (
                         <div
-                          className={`mt-2.5 rounded-xl border p-3 ${tone.panel}`}
+                          className={`mt-3 rounded-control border p-4 ${tone.panel}`}
                         >
-                          <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
-                              <p className="text-[8.5px] text-[#7FA793]">
+                              <p
+                                className={`text-meta font-medium ${tone.text}`}
+                              >
                                 {t("sandboxVerdict")}
                               </p>
                               <p
-                                className={`mt-0.5 text-[12px] font-medium ${tone.text}`}
+                                className={`mt-1 text-body font-semibold ${tone.text}`}
                               >
                                 {phishResult.verdict}
                               </p>
                             </div>
-                            <div className="shrink-0 text-right">
-                              <p
-                                className={`font-mono text-[26px] font-medium leading-none tabular-nums ${tone.text}`}
-                              >
+                            <div
+                              className={`shrink-0 text-right ${tone.text}`}
+                            >
+                              <p className="font-sans text-modal font-semibold leading-none tabular-nums">
                                 {phishResult.score}
                               </p>
-                              <p className="mt-0.5 font-mono text-[8px] text-[#648975]">
+                              <p className="mt-1 text-meta font-medium">
                                 /100
                               </p>
                             </div>
                           </div>
 
-                          <dl className="mt-3 space-y-1.5 text-[9px]">
-                            <div className="flex items-start justify-between gap-2">
-                              <dt className="shrink-0 text-[#648975]">
+                          <dl className="mt-3 space-y-2 text-meta">
+                            <div className="flex items-start justify-between gap-3">
+                              <dt className={`shrink-0 ${tone.text}`}>
                                 Домен
                               </dt>
-                              <dd className="truncate font-mono text-right text-[#CFE8DC]">
+                              <dd className="min-w-0 break-all text-right font-mono tabular-nums text-ink">
                                 {phishResult.domain}
                               </dd>
                             </div>
-                            <div className="flex items-start justify-between gap-2">
-                              <dt className="shrink-0 text-[#648975]">
+                            <div className="flex items-start justify-between gap-3">
+                              <dt className={`shrink-0 ${tone.text}`}>
                                 Возраст
                               </dt>
-                              <dd className="text-right text-[#CFE8DC]">
+                              <dd className="text-right text-ink">
                                 {phishResult.age}
                               </dd>
                             </div>
-                            <div className="flex items-start justify-between gap-2">
-                              <dt className="shrink-0 text-[#648975]">SSL</dt>
-                              <dd className="text-right text-[#CFE8DC]">
+                            <div className="flex items-start justify-between gap-3">
+                              <dt className={`shrink-0 ${tone.text}`}>SSL</dt>
+                              <dd className="text-right text-ink">
                                 {phishResult.ssl}
                               </dd>
                             </div>
-                            <div className="flex items-start justify-between gap-2">
-                              <dt className="shrink-0 text-[#648975]">
+                            <div className="flex items-start justify-between gap-3">
+                              <dt className={`shrink-0 ${tone.text}`}>
                                 Тайпсквоттинг
                               </dt>
-                              <dd className="text-right text-[#CFE8DC]">
+                              <dd className="text-right text-ink">
                                 {phishResult.typosquat}
                               </dd>
                             </div>
                           </dl>
 
-                          <ul className="mt-2.5 space-y-1">
+                          <ul className="mt-3 space-y-1">
                             {phishResult.findings.map((finding) => (
                               <li
                                 key={finding}
-                                className="flex items-start gap-1.5 text-[9px] leading-snug text-[#A9CBB9]"
+                                className="flex items-start gap-2 text-meta leading-snug text-ink"
                               >
-                                <span className="mt-[4px] h-1 w-1 shrink-0 rounded-full bg-current opacity-60" />
+                                <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-current" />
                                 {finding}
                               </li>
                             ))}
@@ -5107,19 +5110,19 @@ export default function Page() {
 function phishTone(status: PhishStatus): { panel: string; text: string } {
   if (status === "safe") {
     return {
-      panel: "border-[#10B981]/40 bg-[#10B981]/10",
-      text: "text-[#6EE7B7]",
+      panel: "border-safe/35 bg-safe-soft",
+      text: "text-safe-ink",
     };
   }
   if (status === "suspicious") {
     return {
-      panel: "border-[#F59E0B]/40 bg-[#F59E0B]/10",
-      text: "text-[#FCD34D]",
+      panel: "border-warn/35 bg-warn-soft",
+      text: "text-warn-ink",
     };
   }
   return {
-    panel: "border-[#EF4444]/40 bg-[#EF4444]/10",
-    text: "text-[#FCA5A5]",
+    panel: "border-danger/35 bg-danger-soft",
+    text: "text-danger-ink",
   };
 }
 
