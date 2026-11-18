@@ -21,20 +21,21 @@ export function applyTheme(theme: Theme): void {
   if (typeof document === "undefined") return;
   document.documentElement.dataset.theme = theme;
   document.documentElement.style.colorScheme = theme;
-  // Next emits a single static theme-color meta; sync every copy in case the
-  // pre-paint script had to create one before head parsing finished.
+  // The pre-paint script runs before Next's static theme-color meta is
+  // parsed, so it can append its own copy and leave two metas in the head.
+  // Hydration-time callers have the complete DOM: sync the first meta and
+  // drop any duplicates it created.
   const metas = Array.from(
     document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]'),
   );
-  if (metas.length === 0) {
-    const meta = document.createElement("meta");
+  let meta = metas[0];
+  if (!meta) {
+    meta = document.createElement("meta");
     meta.name = "theme-color";
-    metas.push(meta);
     document.head.appendChild(meta);
   }
-  metas.forEach((meta) => {
-    meta.content = THEME_COLOR[theme];
-  });
+  metas.slice(1).forEach((extra) => extra.remove());
+  meta.content = THEME_COLOR[theme];
 }
 
 export function toggleTheme(current: Theme): Theme {

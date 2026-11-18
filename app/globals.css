@@ -129,8 +129,9 @@ textarea::placeholder {
   outline-offset: 2px;
 }
 
-/* Phishing / scam trigger marks inside analyzed text. The tint alone is too
- * close to `paper` in light mode, so a solid 2px underline carries the mark. */
+/* Inline marks in the live-call transcript and in the scanner's analyzed
+ * text. The soft tint alone is too close to `paper` in light mode, so the 2px
+ * inset underline — not the fill — carries the mark. */
 .scam-mark {
   border-radius: 4px;
   padding: 1px 3px;
